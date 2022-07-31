@@ -161,19 +161,20 @@ Need to repeat this for all digits, finding appropriate frames.
 ### Extract scores from a dump
 
     > bin/extract-dm-scores data/dm-all-digits.raw
-    I, [2022-07-31T15:42:58.514501 #39806]  INFO -- : Loading data/dm-all-digits.raw
-    I, [2022-07-31T15:42:58.755891 #39806]  INFO -- : Loaded data/dm-all-digits.raw
-    I, [2022-07-31T15:42:58.755930 #39806]  INFO -- : Frames: 195
-    I, [2022-07-31T15:42:58.867055 #39806]  INFO -- : Extracted new score 0/5.418243: 1000000
-    I, [2022-07-31T15:43:00.746469 #39806]  INFO -- : Extracted new score 18/5.64864: 1100000
-    I, [2022-07-31T15:43:02.753638 #39806]  INFO -- : Extracted new score 40/5.89952: 1200000
-    I, [2022-07-31T15:43:04.449306 #39806]  INFO -- : Extracted new score 59/6.1248: 1300000
-    I, [2022-07-31T15:43:05.900162 #39806]  INFO -- : Extracted new score 74/6.3296: 1400000
-    I, [2022-07-31T15:43:07.571794 #39806]  INFO -- : Extracted new score 90/6.52928: 1500000
-    I, [2022-07-31T15:43:09.381414 #39806]  INFO -- : Extracted new score 107/6.734336: 1600000
-    I, [2022-07-31T15:43:11.271907 #39806]  INFO -- : Extracted new score 125/6.959616: 1700000
-    I, [2022-07-31T15:43:12.964140 #39806]  INFO -- : Extracted new score 141/7.159296: 1800000
-    I, [2022-07-31T15:43:14.852314 #39806]  INFO -- : Extracted new score 159/7.384576: 1900000
+    I, [2022-07-31T17:50:30.332476 #47038]  INFO -- : Loading data/dm-all-digits.raw
+    I, [2022-07-31T17:50:30.562553 #47038]  INFO -- : Loaded data/dm-all-digits.raw
+    I, [2022-07-31T17:50:30.562596 #47038]  INFO -- : Frames: 195
+    I, [2022-07-31T17:50:30.568385 #47038]  INFO -- : Extracted new score 0/5.418243: 1000000
+    I, [2022-07-31T17:50:30.659546 #47038]  INFO -- : Extracted new score 18/5.64864: 1100000
+    I, [2022-07-31T17:50:30.771761 #47038]  INFO -- : Extracted new score 40/5.89952: 1200000
+    I, [2022-07-31T17:50:30.864740 #47038]  INFO -- : Extracted new score 59/6.1248: 1300000
+    I, [2022-07-31T17:50:30.945535 #47038]  INFO -- : Extracted new score 74/6.3296: 1400000
+    I, [2022-07-31T17:50:31.031278 #47038]  INFO -- : Extracted new score 90/6.52928: 1500000
+    I, [2022-07-31T17:50:31.121116 #47038]  INFO -- : Extracted new score 107/6.734336: 1600000
+    I, [2022-07-31T17:50:31.218574 #47038]  INFO -- : Extracted new score 125/6.959616: 1700000
+    I, [2022-07-31T17:50:31.307745 #47038]  INFO -- : Extracted new score 141/7.159296: 1800000
+    I, [2022-07-31T17:50:31.400270 #47038]  INFO -- : Extracted new score 159/7.384576: 1900000
+    I, [2022-07-31T17:50:31.588119 #47038]  INFO -- : Average frame processing time: 5ms
 
 Development
 -----------
