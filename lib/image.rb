@@ -35,12 +35,7 @@ class Image
 
   def mask!(x, y, w, h)
     @focus = [x, y, w, h]
-    self.mask = Bitwise.new("\x00" * (width*height/8 + 1))
-    (x...x+w).each do |x_coord|
-      (y...y+h).each do |y_coord|
-        @mask.set_at(y_coord * width + x_coord)
-      end
-    end
+    self.mask = mask_from_rect(x, y, w, h)
   end
 
   def fit_to_content
@@ -79,13 +74,7 @@ class Image
   end
 
   def region_empty?(x, y, w, h)
-    y_head = ["0" * width] * y
-    y_tail = ["0" * width] * (height - (y + h))
-    x_head = "0" * x
-    x_tail = "0" * (width - (x + w))
-
-    bs = y_head + [x_head + "1" * w + x_tail] * h + y_tail
-    region_mask = Bitwise.new([bs.join].pack("B*"))
+    region_mask = mask_from_rect(x, y, w, h)
     (bits & region_mask).cardinality == 0
   end
 
@@ -131,6 +120,16 @@ class Image
 
   def masked_bits
     @masked_bits ||= bits & mask
+  end
+
+  def mask_from_rect(x, y, w, h)
+    y_head = ["0" * width] * y
+    y_tail = ["0" * width] * (height - (y + h))
+    x_head = "0" * x
+    x_tail = "0" * (width - (x + w))
+
+    bs = y_head + [x_head + "1" * w + x_tail] * h + y_tail
+    Bitwise.new([bs.join].pack("B*"))
   end
 
   # input = [
