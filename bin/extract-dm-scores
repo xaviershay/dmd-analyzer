@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'logger'
+require 'ruby-prof'
 
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
@@ -25,8 +26,11 @@ end
 separator = Marshal.load(File.read("masks/dm/separator.raw"))
 
 previous_total = nil
-
+prof = false
+RubyProf.start if prof
+times = []
 dump.frames.each.with_index do |f, i|
+  start_time = Time.now
   image = f.monochrome_image
   if image.matches_mask?(mask)
     image.mask!(0, 0, 128, 23) # extract just the numbers
@@ -73,4 +77,15 @@ dump.frames.each.with_index do |f, i|
       end
     end
   end
+  finish_time = Time.now
+  times.push(finish_time - start_time)
+end
+$logger.info("Average frame processing time: %ims" % (times.sum / times.length.to_f * 1000))
+if prof
+  result = RubyProf.stop
+  printer = RubyProf::GraphHtmlPrinter.new(result)
+  File.open("graph.html", "w") {|f| printer.print(f) }
+
+  printer = RubyProf::CallStackPrinter.new(result)
+  File.open("calls.html", "w") {|f| printer.print(f) }
 end

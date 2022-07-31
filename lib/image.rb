@@ -30,12 +30,12 @@ class Image
   end
 
   def clear_mask!
-    @mask = Bitwise.new("\xFF" * (width*height/8 + 1))
+    self.mask = Bitwise.new("\xFF" * (width*height/8 + 1))
   end
 
   def mask!(x, y, w, h)
     @focus = [x, y, w, h]
-    @mask = Bitwise.new("\x00" * (width*height/8 + 1))
+    self.mask = Bitwise.new("\x00" * (width*height/8 + 1))
     (x...x+w).each do |x_coord|
       (y...y+h).each do |y_coord|
         @mask.set_at(y_coord * width + x_coord)
@@ -123,9 +123,13 @@ class Image
   protected
 
   attr_reader :bits, :focus, :mask
+  def mask=(mask)
+    @mask = mask
+    @masked_bits = nil
+  end
 
   def masked_bits
-    bits & mask
+    @masked_bits ||= bits & mask
   end
 
   # input = [
