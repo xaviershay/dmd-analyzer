@@ -47,16 +47,16 @@ class Image
     x_bounds = [width, -1]
     y_bounds = [height, -1]
 
-    (0...width).each do |x|
-      (0...height).each do |y|
-        bit_index = y * width + x
-        if masked_bits.set_at?(bit_index)
-          x_bounds[0] = x if x < x_bounds[0]
-          x_bounds[1] = x if x > x_bounds[1]
-          y_bounds[0] = y if y < y_bounds[0]
-          y_bounds[1] = y if y > y_bounds[1]
-        end
-      end
+    ones = masked_bits.indexes
+
+    ones.each do |one_index|
+      x = one_index % width
+      y = one_index / width
+
+      x_bounds[0] = x if x < x_bounds[0]
+      x_bounds[1] = x if x > x_bounds[1]
+      y_bounds[0] = y if y < y_bounds[0]
+      y_bounds[1] = y if y > y_bounds[1]
     end
 
     new_width = x_bounds[1] - x_bounds[0] + 1
