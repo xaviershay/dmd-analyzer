@@ -5,7 +5,9 @@ class Image
     # For some reason each byte is flipped, possible something in bitwise
     # library, or maybe just a quirk of output format.
     new(
-      Bitwise.new(data.chars.map {|y| y.unpack("B*").map(&:reverse).pack("B*") }.join),
+      Bitwise.new(data.chars.map {|y|
+        y.unpack("B*").map(&:reverse).pack("B*")
+      }.join),
       width: width,
       height: height
     )
@@ -25,16 +27,17 @@ class Image
     @bits = bits
     @width = width
     @height = height
-    @focus = [0, 0, width, height]
-    @mask = Bitwise.new("\xFF" * (width*height/8 + 1))
+
+    clear_mask!
   end
 
   def clear_mask!
-    self.mask = Bitwise.new("\xFF" * (width*height/8 + 1))
+    # Need to round up here to there is a trailing byte to handle any trailing
+    # bits that aren't byte aligned.
+    self.mask = Bitwise.new("\xFF" * (width*height/8.0).ceil)
   end
 
   def mask!(x, y, w, h)
-    @focus = [x, y, w, h]
     self.mask = mask_from_rect(x, y, w, h)
   end
 
@@ -70,7 +73,10 @@ class Image
   end
 
   def ==(other)
-    bits.raw == other.bits.raw && width == other.width && height == other.height
+    # TODO: Think through semantics of including mask here or not
+    bits.raw == other.bits.raw &&
+      width == other.width &&
+      height == other.height
   end
 
   def region_empty?(x, y, w, h)
@@ -79,7 +85,10 @@ class Image
   end
 
   def add(image)
-    raise "dimensions don't match" unless image.width == self.width && image.height == self.height
+    unless image.width == self.width && image.height == self.height
+      raise "dimensions don't match"
+    end
+
     Image.new(self.bits | image.bits, height: height, width: width)
   end
 
@@ -110,9 +119,11 @@ class Image
   end
 
   attr_reader :width, :height
+
   protected
 
-  attr_reader :bits, :focus, :mask
+  attr_reader :bits, :mask
+
   def mask=(mask)
     @mask = mask
     @masked_bits = nil
@@ -132,18 +143,8 @@ class Image
     Bitwise.new([bs.join].pack("B*"))
   end
 
-  # input = [
-  #   [1, 2, 3, 4],
-  #   [5, 6, 7, 8],
-  #   [9, 10, 11, 12],
-  #   [13, 14, 15, 16]
-  # ]
-
-  # output = [
-  #   [ [1, 2, 5, 6], [3, 4, 7, 8] ],
-  #   [ [9, 10, 13, 14], [13, 14, 15, 16] ]
-  # ]
-
+  # This is pretty weird code, see #formatted specs to get an idea of what it's
+  # trying to do (group "blocks" of 4 bits into single elements).
   def to_quadrants(input)
     input.each_slice(2).map do |two_rows|
       if two_rows.length == 1
