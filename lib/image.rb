@@ -79,12 +79,13 @@ class Image
   end
 
   def region_empty?(x, y, w, h)
-    region_mask = Bitwise.new("\x00" * (width*height/8))
-    (x...x+w).each do |x_coord|
-      (y...y+h).each do |y_coord|
-        region_mask.set_at(y_coord * width + x_coord)
-      end
-    end
+    y_head = ["0" * width] * y
+    y_tail = ["0" * width] * (height - (y + h))
+    x_head = "0" * x
+    x_tail = "0" * (width - (x + w))
+
+    bs = y_head + [x_head + "1" * w + x_tail] * h + y_tail
+    region_mask = Bitwise.new([bs.join].pack("B*"))
     (bits & region_mask).cardinality == 0
   end
 

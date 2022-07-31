@@ -3,6 +3,20 @@ require 'bitwise'
 require 'image'
 
 describe Image do
+  describe '#region_empty?' do
+    it 'only looks at specified region' do
+      i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+
+      expect(i.region_empty?(1, 1, 1, 1)).to eq(true)
+      expect(i.region_empty?(1, 2, 1, 1)).to eq(false)
+      expect(i.region_empty?(2, 1, 1, 1)).to eq(false)
+      expect(i.region_empty?(1, 1, 2, 1)).to eq(false)
+      expect(i.region_empty?(1, 1, 1, 2)).to eq(false)
+      expect(i.region_empty?(0, 1, 2, 1)).to eq(false)
+      expect(i.region_empty?(1, 0, 1, 2)).to eq(false)
+    end
+  end
+
   describe '#fit_to_content!' do
     it 'shrinks along x axis' do
       i = Image.new(Bitwise.new(pack_bits "01010"), width: 5, height: 1)
