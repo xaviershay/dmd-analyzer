@@ -1,8 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    benchmark (0.2.0)
     bitwise (0.6.0)
     diff-lcs (1.5.0)
+    ffi (1.15.5)
+    libusb (0.6.4-x86_64-linux)
+      ffi (~> 1.0)
     rspec (3.11.0)
       rspec-core (~> 3.11.0)
       rspec-expectations (~> 3.11.0)
@@ -16,13 +20,17 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.11.0)
     rspec-support (3.11.0)
+    ruby-prof (1.4.3)
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  benchmark
   bitwise
+  libusb
   rspec
+  ruby-prof
 
 BUNDLED WITH
    2.2.30

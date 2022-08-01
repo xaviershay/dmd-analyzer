@@ -1,6 +1,7 @@
 source "https://rubygems.org"
 
 gem 'bitwise'
+gem 'libusb'
 
 group :development do
   gem 'ruby-prof'
