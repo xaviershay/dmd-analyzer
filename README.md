@@ -21,9 +21,9 @@ Usage
 These can be created at https://playfield.dev by clicking the `DMD DUMP` button
 in the top right of the UI.
 
-    > bin/inspect-dump data/test-dump-1.raw | head -n 20
-    I, [2022-07-31T13:20:08.073870 #29891]  INFO -- : Loading data/test-dump-1.raw
-    I, [2022-07-31T13:20:08.578854 #29891]  INFO -- : Loaded data/test-dump-1.raw
+    > bin/inspect-dump data/test-dump-1.raw.gz | head -n 20
+    I, [2022-07-31T13:20:08.073870 #29891]  INFO -- : Loading data/test-dump-1.raw.gz
+    I, [2022-07-31T13:20:08.578854 #29891]  INFO -- : Loaded data/test-dump-1.raw.gz
     I, [2022-07-31T13:20:08.578941 #29891]  INFO -- : Frames: 437
     I, [2022-07-31T13:20:08.613364 #29891]  INFO -- : Frame 0, timestamp 2294275:
               ▄▄
@@ -49,13 +49,13 @@ A mask can be created to identify frames of a particular type, for further
 analysis later.
 
     > bin/create-mask \
-      -i data/test-dump-1.raw \
-      -o masks/dm/ball.raw \
+      -i data/test-dump-1.raw.gz \
+      -o masks/dm/ball.json \
       --frame 399 \
       --mask 28,27,18,5 \
       -v
-    I, [2022-07-31T13:21:11.747669 #29954]  INFO -- : Loading data/test-dump-1.raw
-    I, [2022-07-31T13:21:12.247765 #29954]  INFO -- : Loaded data/test-dump-1.raw
+    I, [2022-07-31T13:21:11.747669 #29954]  INFO -- : Loading data/test-dump-1.raw.gz
+    I, [2022-07-31T13:21:12.247765 #29954]  INFO -- : Loaded data/test-dump-1.raw.gz
     I, [2022-07-31T13:21:12.276365 #29954]  INFO -- : Extracted frame 399:
 
 
@@ -111,7 +111,7 @@ analysis later.
 
 ### Inspect mask
 
-    > bin/inspect-mask masks/dm/ball.raw
+    > bin/inspect-mask masks/dm/ball.json
     I, [2022-07-31T15:48:17.456906 #40472]  INFO -- : Mask:
                                                                     
                                                                     
@@ -152,7 +152,7 @@ analysis later.
 Need to repeat this for all digits, finding appropriate frames.
 
     > bin/extract-dm-digit-templates \
-        -i data/dm-all-digits.raw \
+        -i data/dm-all-digits.raw.gz \
         -o masks/dm \
         --frame 70 \
         --score 1,300,000 \
@@ -160,9 +160,9 @@ Need to repeat this for all digits, finding appropriate frames.
 
 ### Extract scores from a dump
 
-    > bin/extract-dm-scores data/dm-all-digits.raw
-    I, [2022-07-31T17:50:30.332476 #47038]  INFO -- : Loading data/dm-all-digits.raw
-    I, [2022-07-31T17:50:30.562553 #47038]  INFO -- : Loaded data/dm-all-digits.raw
+    > bin/extract-dm-scores data/dm-all-digits.raw.gz
+    I, [2022-07-31T17:50:30.332476 #47038]  INFO -- : Loading data/dm-all-digits.raw.gz
+    I, [2022-07-31T17:50:30.562553 #47038]  INFO -- : Loaded data/dm-all-digits.raw.gz
     I, [2022-07-31T17:50:30.562596 #47038]  INFO -- : Frames: 195
     I, [2022-07-31T17:50:30.568385 #47038]  INFO -- : Extracted new score 0/5.418243: 1000000
     I, [2022-07-31T17:50:30.659546 #47038]  INFO -- : Extracted new score 18/5.64864: 1100000
