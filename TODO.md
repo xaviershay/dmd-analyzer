@@ -6,5 +6,6 @@
 * Figure out PIN2DMD purchasing options to get some real hardware
   * Done, on the way.
 * Replace the Marshal dump/load with something more robust
+  * DONE with JSON
 * Record a game end to figure out best way to detect
 * Record a multiplayer game to figure out best way to detect

@@ -9,7 +9,7 @@ require 'image'
 
 filename = ARGV.shift
 
-i = Marshal.load(File.read(filename))
+i = Image.from_json(File.read(filename))
 
 $logger = Logger.new(STDOUT)
 $logger.info "Mask:\n" + i.mask_image.formatted

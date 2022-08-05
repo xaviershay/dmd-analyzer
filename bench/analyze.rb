@@ -4,13 +4,13 @@ $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'pin2dmd_dump'
 
 dump = Pin2DmdDump.from_file("data/dm-all-digits.raw")
-filename = "masks/dm/ball.raw"
-mask = Marshal.load(File.read(filename))
+filename = "masks/dm/ball.json"
+mask = Image.from_json(File.read(filename))
 
 templates = (0..9).to_a.map do |n|
-  [n, Marshal.load(File.read("masks/dm/#{n}.raw"))]
+  [n, Image.from_json(File.read("masks/dm/#{n}.json"))]
 end
-separator = Marshal.load(File.read("masks/dm/separator.raw"))
+separator = Image.from_json(File.read("masks/dm/separator.json"))
 
 n = 5
 result = Benchmark.measure do

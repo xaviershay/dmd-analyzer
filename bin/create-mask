@@ -52,7 +52,7 @@ $logger.info "Mask #{mask.inspect}:\n" + image.mask_image.formatted
 $logger.info "Masked image:\n" + image.formatted
 
 if output_file = options[:output_file]
-  File.write(output_file, Marshal.dump(image))
+  File.write(output_file, image.to_json)
 else
   $logger.info "No output file specified, skipping dump."
 end

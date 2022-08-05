@@ -47,7 +47,7 @@ $logger.info("Loaded #{filename}")
 $logger.info("Frames: #{dump.frames.length}")
 
 
-mask = Marshal.load(File.read("masks/dm/ball.raw"))
+mask = Image.from_json(File.read("masks/dm/ball.json"))
 
 f = dump.frames.fetch(options.fetch(:frame))
 image = f.monochrome_image
@@ -72,11 +72,11 @@ if image.matches_mask?(mask)
   digits = []
   bounds.zip(names).each do |bound, name|
     name = "separator" if name == ","
-    digit_filename = File.join(options.fetch(:output_file), name + ".raw")
+    digit_filename = File.join(options.fetch(:output_file), name + ".json")
     image.mask!(bound[0], 0, bound[1] - bound[0], 23)
     number = image.fit_to_content
     $logger.info("Exporting to #{digit_filename}")
-    File.write(digit_filename, Marshal.dump(number)) unless options[:test_run]
+    File.write(digit_filename, number.to_json) unless options[:test_run]
   end
 else
   $logger.error("Frame does not match ball mask!\n" + image.formatted)
