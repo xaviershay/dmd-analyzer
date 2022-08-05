@@ -182,3 +182,16 @@ Development
 We have the initial stirrings of a test suite.
 
     rspec
+
+Emulation
+---------
+
+Assorted pro-tips for playing using the switches on https://playfield.dev
+
+### Demolition Man
+
+* `Ball Launch` doesn't appear to do anything, just start scoring points with
+  playfield switches to "launch".
+* `Top Popper` is the back sink that starts multiball.
+* To drain, close `Trough 5 (left)`, toggle `Eject`, open `Trough 5 (left)`.
+  (Optos --- such as the trough --- are "open" when they are blocked.)
