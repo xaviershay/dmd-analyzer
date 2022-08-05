@@ -1,5 +1,5 @@
 require 'image'
-
+require 'zlib'
 
 class Pin2DmdDump
   class Frame < Struct.new(:timestamp, :images)
@@ -12,6 +12,10 @@ class Pin2DmdDump
 
   def self.from_file(filename)
     data = File.read(filename, encoding: 'BINARY')
+
+    if data[0..1].bytes == [31, 139] # Magic ID for gzip
+      data = Zlib::GzipReader.new(StringIO.new(data), encoding: 'BINARY').read
+    end
 
     # wpc-emu dump format is defined here, and is the source for the following
     # comments (though it probably copied them from vpinmame, our primary goal
