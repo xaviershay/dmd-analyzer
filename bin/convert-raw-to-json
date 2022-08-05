@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
+
+require 'logger'
+require 'image'
+
+$logger = Logger.new(STDOUT)
+
+while f = ARGV.shift
+  begin
+    i = Marshal.load(File.read(f))
+    new_f = File.join(File.dirname(f), File.basename(f, ".raw") + ".json")
+    File.write(new_f, i.to_json)
+    $logger.info "Converted #{f} to #{new_f}"
+  rescue
+    $logger.warn "Could not convert #{f}"
+  end
+end
+
+

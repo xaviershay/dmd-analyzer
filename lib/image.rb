@@ -22,32 +22,47 @@ class Image
   end
 
   def to_json(*args)
-    {
+    attrs = {
       bits: Base64.encode64(@bits.raw),
       width: width,
       height: height
-    }.to_json(*args)
+    }
+
+    if @mask.cardinality < width*height
+      attrs[:mask] = Base64.encode64(@mask.raw)
+    end
+
+    attrs.to_json(*args)
   end
 
   def self.from_json(json)
-    attrs = JSON.parse(json)
-    new(
-      Bitwise.new(Base64.decode64(attrs.fetch("bits"))),
-      width: attrs.fetch("width"),
-      height: attrs.fetch("height")
-    )
+    raw = JSON.parse(json)
+    bits = Bitwise.new(Base64.decode64(raw.fetch("bits")))
+
+    attrs = {
+      width: raw.fetch("width"),
+      height: raw.fetch("height")
+    }
+    if raw["mask"]
+      attrs[:mask] = Bitwise.new(Base64.decode64(raw["mask"]))
+    end
+    new(bits, **attrs)
   end
 
   def mask_image
     Image.new(mask, width: width, height: height)
   end
 
-  def initialize(bits, width:, height:)
+  def initialize(bits, width:, height:, mask: nil)
     @bits = bits
     @width = width
     @height = height
 
-    clear_mask!
+    if mask
+      @mask = mask
+    else
+      clear_mask!
+    end
   end
 
   def clear_mask!

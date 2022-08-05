@@ -10,10 +10,20 @@ describe Image do
       attrs = JSON.parse(i.to_json)
       expect(attrs.keys.sort).to eq(%w(bits height width))
     end
+
     it 'goes both ways' do
       i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
 
       expect(Image.from_json(i.to_json)).to eq(i)
+    end
+
+    it 'includes mask' do
+      i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+      i.mask!(0, 0, 1, 1)
+
+      i2 = Image.from_json(i.to_json)
+
+      expect(i.mask_image).to eq(i2.mask_image)
     end
   end
 
