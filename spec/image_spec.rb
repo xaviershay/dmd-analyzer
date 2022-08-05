@@ -3,6 +3,40 @@ require 'bitwise'
 require 'image'
 
 describe Image do
+  describe 'JSON serialization' do
+    it 'generates valid JSON' do
+      i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+
+      attrs = JSON.parse(i.to_json)
+      expect(attrs.keys.sort).to eq(%w(bits height width))
+    end
+    it 'goes both ways' do
+      i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+
+      expect(Image.from_json(i.to_json)).to eq(i)
+    end
+  end
+
+  describe '#hash' do
+    it 'hashes bits the same' do
+      i1 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+      i2 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+      i3 = Image.new(Bitwise.new(pack_bits "011101111"), width: 3, height: 3)
+
+      expect(i1.hash).to eq(i2.hash)
+      expect(i1.hash).to_not eq(i3.hash)
+    end
+
+    it 'includes dimensions in hash' do
+      i1 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+      i2 = Image.new(Bitwise.new(pack_bits "111101111"), width: 2, height: 3)
+      i3 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 2)
+
+      expect(i1.hash).to_not eq(i2.hash)
+      expect(i1.hash).to_not eq(i3.hash)
+    end
+  end
+
   describe '#region_empty?' do
     it 'only looks at specified region' do
       i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)

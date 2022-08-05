@@ -1,4 +1,6 @@
 require 'bitwise'
+require 'base64'
+require 'json'
 
 class Image
   def self.from_raw(data, width: 128, height: 32)
@@ -17,6 +19,23 @@ class Image
     masked_bits.raw.chars.map {|y|
       y.unpack("B*").map(&:reverse).pack("B*")
     }.join
+  end
+
+  def to_json(*args)
+    {
+      bits: Base64.encode64(@bits.raw),
+      width: width,
+      height: height
+    }.to_json(*args)
+  end
+
+  def self.from_json(json)
+    attrs = JSON.parse(json)
+    new(
+      Bitwise.new(Base64.decode64(attrs.fetch("bits"))),
+      width: attrs.fetch("width"),
+      height: attrs.fetch("height")
+    )
   end
 
   def mask_image
@@ -78,6 +97,11 @@ class Image
       width == other.width &&
       height == other.height
   end
+
+  def hash
+    [bits.raw, width, height].hash
+  end
+
 
   def region_empty?(x, y, w, h)
     region_mask = mask_from_rect(x, y, w, h)
