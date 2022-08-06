@@ -19,6 +19,7 @@ $logger.info("Frames: #{dump.frames.length}")
 
 filename = "masks/dm/ball.json"
 mask = Image.from_json(File.read(filename))
+final_mask = Image.from_json(File.read("masks/dm/final_score.json"))
 
 templates = (0..9).to_a.map do |n|
   [n, Image.from_json(File.read("masks/dm/#{n}.json"))]
@@ -27,6 +28,10 @@ separator = Image.from_json(File.read("masks/dm/separator.json"))
 
 previous_total = nil
 prof = false
+
+state = {}
+events = []
+
 RubyProf.start if prof
 times = []
 dump.frames.each.with_index do |f, i|
@@ -72,14 +77,33 @@ dump.frames.each.with_index do |f, i|
         total += d * (10 ** i)
       end
       if total != previous_total
-        $logger.info "Extracted new score #{i}/#{f.timestamp / 1000000.0}: #{total}"
+        if total == 0
+          if !state[:playing]
+            $logger.info "Game start #{i}/#{f.timestamp / 1000000.0}"
+            state[:playing] = true
+            events.push({type: :game_start, t: f.timestamp})
+          end
+        else
+          if !state[:playing]
+            $logger.error "Unexpected score update while not playing"
+          else
+            $logger.info "Extracted new score #{i}/#{f.timestamp / 1000000.0}: #{total}"
+            events.push({type: :update_score, t: f.timestamp, score: total})
+          end
+        end
         previous_total = total
       end
+    end
+  elsif image.matches_mask?(final_mask)
+    if state[:playing]
+      $logger.info "Game end #{i}/#{f.timestamp / 1000000.0}"
+      state[:playing] = false
     end
   end
   finish_time = Time.now
   times.push(finish_time - start_time)
 end
+
 $logger.info("Average frame processing time: %ims" % (times.sum / times.length.to_f * 1000))
 if prof
   result = RubyProf.stop
