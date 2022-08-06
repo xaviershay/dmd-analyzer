@@ -13,6 +13,9 @@ https://github.com/ferocia/kartalytics.
 
 A test dump file from Demolition Man is provided in `data` to experiment with.
 
+There is rails app in `dmd-analyzer` that can receive events and store in a
+database.
+
 Usage
 -----
 

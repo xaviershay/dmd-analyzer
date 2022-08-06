@@ -22,6 +22,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_06_210936) do
     t.datetime "created_at", null: false
     t.datetime "occured_at", null: false
     t.jsonb "metadata", default: "{}", null: false
+    t.index ["game_id", "type"], name: "index_events_on_game_id_and_type"
     t.index ["game_id"], name: "index_events_on_game_id"
   end
 
@@ -31,6 +32,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_06_210936) do
     t.datetime "completed_at"
     t.integer "high_score", default: 0, null: false
     t.uuid "uuid", null: false
+    t.index ["high_score"], name: "index_games_on_high_score"
+    t.index ["started_at"], name: "index_games_on_started_at"
     t.index ["uuid"], name: "index_games_on_uuid", unique: true
   end
 

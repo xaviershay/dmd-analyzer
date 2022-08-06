@@ -11,6 +11,8 @@ class Initial < ActiveRecord::Migration[7.0]
     end
 
     add_index :games, :uuid, unique: true
+    add_index :games, :started_at
+    add_index :games, :high_score
 
     create_table :events do |t|
       t.references :game, null: false, foreign_key: true
@@ -20,6 +22,8 @@ class Initial < ActiveRecord::Migration[7.0]
       t.datetime :occured_at, null: false
       t.jsonb :metadata, null: false, default: '{}'
     end
+
+    add_index :events, [:game_id, :type]
 
     create_table :players do |t|
       t.datetime :created_at, null: false

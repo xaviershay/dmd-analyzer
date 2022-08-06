@@ -26,13 +26,14 @@ $logger.info("Frames: #{dump.frames.length}")
 events = Queue.new
 min_wait_time = 0.5
 
-Thread.new do
+uploader = Thread.new do
   while x = events.pop
     to_upload = [x]
     events.size.times do
       to_upload.push(events.pop)
     end
 
+    finish = to_upload.delete(:abort)
     $logger.info "UPLOAD: #{to_upload.size}"
     last_upload_time = Time.now
 
@@ -42,6 +43,7 @@ Thread.new do
     request["content-type"] = "application/json"
     request.body = {events: to_upload}.to_json
     response = http.request(request) # Use nokogiri, hpricot, etc to parse response.body.
+    break if finish
 
     n = Time.now
     elapsed = n - last_upload_time
@@ -283,3 +285,5 @@ if prof
   printer = RubyProf::CallStackPrinter.new(result)
   File.open("calls.html", "w") {|f| printer.print(f) }
 end
+events.push(:abort)
+uploader.join
