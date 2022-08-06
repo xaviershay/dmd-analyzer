@@ -2,6 +2,8 @@
 
 require 'logger'
 require 'ruby-prof'
+require 'net/http'
+require 'securerandom'
 
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
@@ -20,6 +22,34 @@ dump = Pin2DmdDump.from_file(filename)
 $logger.info("Loaded #{filename}")
 
 $logger.info("Frames: #{dump.frames.length}")
+
+events = Queue.new
+min_wait_time = 0.5
+
+Thread.new do
+  while x = events.pop
+    to_upload = [x]
+    events.size.times do
+      to_upload.push(events.pop)
+    end
+
+    $logger.info "UPLOAD: #{to_upload.size}"
+    last_upload_time = Time.now
+
+    http = Net::HTTP.new("localhost", 3000)
+
+    request = Net::HTTP::Post.new("/api/upload/events")
+    request["content-type"] = "application/json"
+    request.body = {events: to_upload}.to_json
+    response = http.request(request) # Use nokogiri, hpricot, etc to parse response.body.
+
+    n = Time.now
+    elapsed = n - last_upload_time
+    last_upload_time = n
+
+    sleep([elapsed - min_wait_time, 0].max)
+  end
+end
 
 filename = "masks/dm/ball.json"
 mask = Image.from_json(File.read(filename))
@@ -50,7 +80,6 @@ class EventFrameAnnotater
 end
 
 state = {}
-events = []
 
 module DigitMatcher
   class Score1P
@@ -121,7 +150,13 @@ module ScreenMatcher
               state[:playing] = true
               state[:just_drained] = false
               state[:just_ball_saved] = false
-              events.push({type: :game_start})
+              state[:game_id] = SecureRandom.uuid
+              state[:current_player] = 1
+              events.push(
+                type: :game_start,
+                player_number: state.fetch(:current_player),
+                game_id: state.fetch(:game_id)
+              )
               return true
             end
           else
@@ -130,7 +165,12 @@ module ScreenMatcher
             else
               state[:just_drained] = false
               state[:just_ball_saved] = false
-              events.push({type: :update_score, score: total})
+              events.push(
+                type: :update_score,
+                score: total,
+                player_number: state.fetch(:current_player),
+                game_id: state.fetch(:game_id)
+              )
               return true
             end
           end
@@ -151,7 +191,11 @@ module ScreenMatcher
       if state[:playing]
         if !state[:just_drained]
           state[:just_drained] = true
-          events.push(type: :drain)
+          events.push(
+            type: :drain,
+            player_number: state.fetch(:current_player),
+            game_id: state.fetch(:game_id)
+          )
         end
       else
         $logger.error "Unexpected total bonus while not playing"
@@ -171,7 +215,11 @@ module ScreenMatcher
       if state[:playing]
         if !state[:just_ball_saved]
           state[:just_ball_saved] = true
-          events.push(type: :ball_save)
+          events.push(
+            type: :ball_save,
+            player_number: state.fetch(:current_player),
+            game_id: state.fetch(:game_id)
+          )
         end
       else
         $logger.error "Unexpected ball save while not playing"
@@ -189,8 +237,13 @@ module ScreenMatcher
       return unless image.matches_mask?(@mask)
 
       if state[:playing]
-        events.push(type: :game_end)
-        state[:playing] = false
+        # TODO: Handle multiplayer games
+        events.push(
+          type: :game_end,
+          player_number: state.fetch(:current_player),
+          game_id: state.fetch(:game_id)
+        )
+        state = {}
       end
     end
   end
