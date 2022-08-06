@@ -106,6 +106,39 @@ class Image
     )
   end
 
+  def fit_to_masked_content(x, y, w, h)
+    x_bounds = [width, -1]
+    y_bounds = [height, -1]
+
+    mask = mask_from_rect(x, y, w, h)
+
+    ones = (bits & mask).indexes
+
+    ones.each do |one_index|
+      x = one_index % width
+      y = one_index / width
+
+      x_bounds[0] = x if x < x_bounds[0]
+      x_bounds[1] = x if x > x_bounds[1]
+      y_bounds[0] = y if y < y_bounds[0]
+      y_bounds[1] = y if y > y_bounds[1]
+    end
+
+    new_width = x_bounds[1] - x_bounds[0] + 1
+    new_height = y_bounds[1] - y_bounds[0] + 1
+
+    arr = bits.bits.chars.each_slice(width).to_a
+    arr = arr[y_bounds[0]..y_bounds[1]].map do |row|
+      row[x_bounds[0]..x_bounds[1]]
+    end
+
+    Image.new(
+      Bitwise.new([arr.join].pack("B*")),
+      width: new_width,
+      height: new_height
+    )
+  end
+
   def ==(other)
     # TODO: Think through semantics of including mask here or not
     bits.raw == other.bits.raw &&

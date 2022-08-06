@@ -11,6 +11,10 @@ require 'pin2dmd_dump'
 filename = ARGV.shift
 
 $logger = Logger.new(STDOUT)
+$logger.formatter = proc do |severity, datetime, progname, msg|
+  date_format = datetime.strftime("%Y-%m-%d %H:%M:%S.%L")
+  "#{severity} [#{date_format}]: #{msg}\n"
+end
 $logger.info("Loading #{filename}")
 dump = Pin2DmdDump.from_file(filename)
 $logger.info("Loaded #{filename}")
@@ -31,101 +35,187 @@ separator = Image.from_json(File.read("masks/dm/separator.json"))
 previous_total = nil
 prof = false
 
+class EventFrameAnnotater
+  def initialize(logger, buffer, frame)
+    @logger = logger
+    @buffer = buffer
+    @frame = frame
+  end
+
+  def push(event)
+    event = event.merge(t: @frame.timestamp)
+    @logger.info(event)
+    @buffer.push(event)
+  end
+end
+
 state = {}
 events = []
+
+module DigitMatcher
+  class Score1P
+    def initialize
+      @templates = (0..9).to_a.map do |n|
+        [n, Image.from_json(File.read("masks/dm/#{n}.json"))]
+      end
+      @separator = Image.from_json(File.read("masks/dm/separator.json"))
+    end
+
+    def detect(number)
+      return ',' if @separator == number
+      t = @templates.detect {|n, template|
+        template == number
+      }
+      t[0] if t
+    end
+  end
+end
+
+module ScreenMatcher
+  class Score
+    def initialize(logger:, mask: "masks/dm/ball.json", digit_matcher: DigitMatcher::Score1P.new)
+      @logger = logger
+      @mask = Image.from_json(File.read(mask))
+      @digit_matcher = digit_matcher
+    end
+
+    def analyze!(state, events, image)
+      return unless image.matches_mask?(@mask)
+
+      region_start = nil
+      bounds = []
+
+      (0...image.width).each do |x|
+        empty = image.region_empty?(x, 0, 1, 23)
+        if !region_start && !empty
+          region_start = x
+        elsif region_start && empty
+          bounds << [region_start, x]
+          region_start = nil
+        end
+      end
+
+      digits = []
+      success = true
+      bounds.each do |bound|
+        number = image.fit_to_masked_content(bound[0], 0, bound[1] - bound[0], 23)
+        t = @digit_matcher.detect(number)
+
+        unless t
+          success = false
+          break
+        end
+
+        digits.push t unless t == ','
+      end
+
+      if success && !digits.empty?
+        total = 0
+        digits.reverse.each.with_index.each do |d, i|
+          total += d * (10 ** i)
+        end
+        if total != state[:previous_total]
+          state[:previous_total] = total
+          if total == 0
+            if !state[:playing]
+              state[:playing] = true
+              state[:just_drained] = false
+              state[:just_ball_saved] = false
+              events.push({type: :game_start})
+              return true
+            end
+          else
+            if !state[:playing]
+              $logger.error "Unexpected score update while not playing"
+            else
+              state[:just_drained] = false
+              state[:just_ball_saved] = false
+              events.push({type: :update_score, score: total})
+              return true
+            end
+          end
+        end
+      end
+      return false
+    end
+  end
+
+  class Drain
+    def initialize(logger:, mask: "masks/dm/total_bonus.json")
+      @logger = logger
+      @mask = Image.from_json(File.read(mask))
+    end
+
+    def analyze!(state, events, image)
+      return unless image.matches_mask?(@mask)
+      if state[:playing]
+        if !state[:just_drained]
+          state[:just_drained] = true
+          events.push(type: :drain)
+        end
+      else
+        $logger.error "Unexpected total bonus while not playing"
+      end
+    end
+  end
+
+  class BallSave
+    def initialize(logger:, mask: "masks/dm/ball_save.json")
+      @logger = logger
+      @mask = Image.from_json(File.read(mask))
+    end
+
+    def analyze!(state, events, image)
+      return unless image.matches_mask?(@mask)
+
+      if state[:playing]
+        if !state[:just_ball_saved]
+          state[:just_ball_saved] = true
+          events.push(type: :ball_save)
+        end
+      else
+        $logger.error "Unexpected ball save while not playing"
+      end
+    end
+  end
+
+  class GameEnd
+    def initialize(logger:, mask: "masks/dm/final_score.json")
+      @logger = logger
+      @mask = Image.from_json(File.read(mask))
+    end
+
+    def analyze!(state, events, image)
+      return unless image.matches_mask?(@mask)
+
+      if state[:playing]
+        events.push(type: :game_end)
+        state[:playing] = false
+      end
+    end
+  end
+end
+
+matchers = [
+  ScreenMatcher::Score,
+  ScreenMatcher::Drain,
+  ScreenMatcher::BallSave,
+  ScreenMatcher::GameEnd
+].map {|x| x.new(logger: $logger) }
 
 RubyProf.start if prof
 times = []
 dump.frames.each.with_index do |f, i|
+  $logger.formatter = proc do |severity, datetime, progname, msg|
+    date_format = datetime.strftime("%Y-%m-%d %H:%M:%S.%L")
+    "#{severity} [#{date_format}] (#{i}): #{msg}\n"
+  end
   start_time = Time.now
   image = f.monochrome_image
-  if image.matches_mask?(mask)
-    image.mask!(0, 0, 128, 23) # extract just the numbers
+  annotater = EventFrameAnnotater.new($logger, events, f)
 
-    region_start = nil
-    bounds = []
-
-    (0...image.width).each do |x|
-      empty = image.region_empty?(x, 0, 1, 23)
-      if !region_start && !empty
-        region_start = x
-      elsif region_start && empty
-        bounds << [region_start, x]
-        region_start = nil
-      end
-    end
-
-    digits = []
-    success = true
-    bounds.each do |bound|
-      image.mask!(bound[0], 0, bound[1] - bound[0], 23)
-      number = image.fit_to_content
-      next if separator == number
-      t = templates.detect {|n, template|
-        template == number
-      }
-
-      unless t
-        success = false
-        break
-      end
-
-      digits.push t[0]
-    end
-
-    if success && !digits.empty?
-      total = 0
-      digits.reverse.each.with_index.each do |d, i|
-        total += d * (10 ** i)
-      end
-      if total != previous_total
-        if total == 0
-          if !state[:playing]
-            $logger.info "Game start #{i}/#{f.timestamp / 1000000.0}"
-            state[:playing] = true
-            state[:just_drained] = false
-            state[:just_ball_saved] = false
-            events.push({type: :game_start, t: f.timestamp})
-          end
-        else
-          if !state[:playing]
-            $logger.error "Unexpected score update while not playing"
-          else
-            $logger.info "Extracted new score #{i}/#{f.timestamp / 1000000.0}: #{total}"
-            state[:just_drained] = false
-            state[:just_ball_saved] = false
-            events.push({type: :update_score, t: f.timestamp, score: total})
-          end
-        end
-        previous_total = total
-      end
-    end
-  elsif image.matches_mask?(total_bonus_mask)
-    # TODO: Score font for bonus is slightly different to score font
-    if state[:playing]
-      if !state[:just_drained]
-        $logger.info "Ball drained #{i}/#{f.timestamp / 1000000.0}"
-        state[:just_drained] = true
-        events.push({type: :drain, t: f.timestamp})
-      end
-    else
-      $logger.error "Unexpected total bonus while not playing"
-    end
-  elsif image.matches_mask?(ball_save_mask)
-    if state[:playing]
-      if !state[:just_ball_saved]
-        $logger.info "Ball save #{i}/#{f.timestamp / 1000000.0}"
-        state[:just_ball_saved] = true
-        events.push({type: :ball_save, t: f.timestamp})
-      end
-    else
-      $logger.error "Unexpected ball save while not playing"
-    end
-  elsif image.matches_mask?(final_mask)
-    if state[:playing]
-      $logger.info "Game end #{i}/#{f.timestamp / 1000000.0}"
-      state[:playing] = false
-    end
+  matchers.detect do |m|
+    m.analyze!(state, annotater, image)
   end
   finish_time = Time.now
   times.push(finish_time - start_time)
