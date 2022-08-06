@@ -1,4 +1,5 @@
 require 'image'
+require 'stringio'
 require 'zlib'
 
 class Pin2DmdDump
