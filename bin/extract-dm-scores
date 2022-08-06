@@ -20,6 +20,7 @@ $logger.info("Frames: #{dump.frames.length}")
 filename = "masks/dm/ball.json"
 mask = Image.from_json(File.read(filename))
 final_mask = Image.from_json(File.read("masks/dm/final_score.json"))
+total_bonus_mask = Image.from_json(File.read("masks/dm/total_bonus.json"))
 
 templates = (0..9).to_a.map do |n|
   [n, Image.from_json(File.read("masks/dm/#{n}.json"))]
@@ -81,6 +82,7 @@ dump.frames.each.with_index do |f, i|
           if !state[:playing]
             $logger.info "Game start #{i}/#{f.timestamp / 1000000.0}"
             state[:playing] = true
+            state[:just_drained] = false
             events.push({type: :game_start, t: f.timestamp})
           end
         else
@@ -88,11 +90,23 @@ dump.frames.each.with_index do |f, i|
             $logger.error "Unexpected score update while not playing"
           else
             $logger.info "Extracted new score #{i}/#{f.timestamp / 1000000.0}: #{total}"
+            state[:just_drained] = false
             events.push({type: :update_score, t: f.timestamp, score: total})
           end
         end
         previous_total = total
       end
+    end
+  elsif image.matches_mask?(total_bonus_mask)
+    # TODO: Score font for bonus is slightly different to score font
+    if state[:playing]
+      if !state[:just_drained]
+        $logger.info "Ball drained #{i}/#{f.timestamp / 1000000.0}"
+        state[:just_drained] = true
+        events.push({type: :drain, t: f.timestamp})
+      end
+    else
+      $logger.error "Unexpected total bonus while not playing"
     end
   elsif image.matches_mask?(final_mask)
     if state[:playing]
