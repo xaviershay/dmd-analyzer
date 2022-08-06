@@ -25,6 +25,7 @@ $logger.info("Frames: #{dump.frames.length}")
 
 events = Queue.new
 min_wait_time = 0.5
+upload = false
 
 uploader = Thread.new do
   while x = events.pop
@@ -50,7 +51,7 @@ uploader = Thread.new do
     last_upload_time = n
 
     sleep([elapsed - min_wait_time, 0].max)
-  end
+  end if upload
 end
 
 filename = "masks/dm/ball.json"
@@ -67,6 +68,7 @@ separator = Image.from_json(File.read("masks/dm/separator.json"))
 previous_total = nil
 prof = false
 
+# This interface evolved out of something and now sucks a lot
 class EventFrameAnnotater
   def initialize(logger, buffer, frame)
     @logger = logger
@@ -74,10 +76,30 @@ class EventFrameAnnotater
     @frame = frame
   end
 
+  def update_frame!(frame)
+    @frame = frame
+  end
+
+  def update_logger!(logger)
+    @logger = logger
+  end
+
   def push(event)
-    event = event.merge(t: @frame.timestamp)
-    @logger.info(event)
-    @buffer.push(event)
+    # Because we're replaying a recording, we need to insert timestamps. When
+    # reading live this logic is probably quite different.
+    if event[:type] == :game_start
+      # Arbitrarily start a minute ago, for short games this will mean they
+      # won't show up in the future. Just for testing anyways.
+      @started_at = Time.now - 60
+      @started_t = @frame.timestamp
+    end
+    if @started_at
+      event = event.merge(t: @started_at + @frame.timestamp / 1_000_000.0)
+      @logger.info(event)
+      @buffer.push(event)
+    else
+      @logger.warn "Unexpected event before game start: #{event.inspect}"
+    end
   end
 end
 
@@ -260,6 +282,7 @@ matchers = [
 
 RubyProf.start if prof
 times = []
+annotater = EventFrameAnnotater.new(nil, events, nil)
 dump.frames.each.with_index do |f, i|
   $logger.formatter = proc do |severity, datetime, progname, msg|
     date_format = datetime.strftime("%Y-%m-%d %H:%M:%S.%L")
@@ -267,7 +290,8 @@ dump.frames.each.with_index do |f, i|
   end
   start_time = Time.now
   image = f.monochrome_image
-  annotater = EventFrameAnnotater.new($logger, events, f)
+  annotater.update_frame!(f)
+  annotater.update_logger!($logger)
 
   matchers.detect do |m|
     m.analyze!(state, annotater, image)

@@ -9,8 +9,7 @@ class UploadController < ApplicationController
 
       n = event.delete(:player_number) || next
       type = event.delete(:type) || next
-      t = Time.now # TODO: event.delete(:t)
-      event.delete(:t)
+      t = event.delete(:t) || next
 
       event = game.events.create!(
         type: type,
