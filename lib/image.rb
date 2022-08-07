@@ -79,6 +79,11 @@ class Image
     self.mask = mask_from_rect(x, y, w, h)
   end
 
+  # [x, y] coordinates of all lit pixels
+  def coordinates
+    masked_bits.indexes.map {|x| [x % width, x / width] }
+  end
+
   def fit_to_content
     x_bounds = [width, -1]
     y_bounds = [height, -1]
