@@ -1,3 +1,5 @@
+require 'image'
+
 module Screen
   class Score
     def initialize(
@@ -7,12 +9,89 @@ module Screen
       @mask = Image.from_json(File.read(mask))
     end
 
+    def add_pixel_to_group(group, pixel)
+      # (group[:pixels] ||= []) << pixel
+      group[:max_x] = pixel[0] if pixel[0] > group.fetch(:max_x, -1)
+      group[:max_y] = pixel[1] if pixel[1] > group.fetch(:max_y, -1)
+      group[:min_x] = pixel[0] if pixel[0] < group.fetch(:min_x, 2 ** 32)
+      group[:min_y] = pixel[1] if pixel[1] < group.fetch(:min_y, 2 ** 32)
+      group
+    end
+
     def analyze!(image)
       return unless image.matches_mask?(@mask)
+
+      image.mask!(0, 0, 128, 26)
+
+      bits = image.send(:masked_bits).indexes.map {|x| [x % image.width, x / image.width] }
+
+      groups = []
+
+      while true
+        current_group = {}
+        seed = bits.shift
+        break unless seed
+        f = lambda do |p|
+          current_group = add_pixel_to_group(current_group, p)
+
+          split = bits.partition {|bit|
+            bit[0].between?(current_group[:min_x] - 2, current_group[:max_x] + 2) &&
+              bit[1].between?(current_group[:min_y] - 2, current_group[:max_y] + 2)
+          }
+
+          neighbours = split[0]
+          bits = split[1]
+
+          neighbours.each do |n|
+            f[n]
+          end
+        end
+        f[seed]
+        groups << current_group
+      end
+
+      gs = groups.partition do |g|
+        g[:max_y] - g[:min_y] > 10
+      end
+
+      b = gs[0].reduce {|a, b|
+        a[:max_x] = [a[:max_x], b[:max_x]].max
+        a[:max_y] = [a[:max_y], b[:max_y]].max
+
+        a[:min_x] = [a[:min_x], b[:min_x]].min
+        a[:min_y] = [a[:min_y], b[:min_y]].min
+        a
+      }
+
+      gs[0] = b
+      gs = gs.flatten
+      gs.each do |g|
+        i = image.fit_to_masked_content(g[:min_x], g[:min_y], g[:max_x] - g[:min_x] + 1, g[:max_y] - g[:min_y] + 1)
+        # puts i.formatted
+      end
+
+      # if two groups share same height +/- 1 and are less than 3 px away from each other, join them
+      # only need to do this if height > threshold
+      # join all groups > threshold
+      nil
+      {player_count: gs.size}
     end
   end
 end
 
+# 2p has a gap in middle, a blob bottom right, nothing bottom left
+#
+# STRAT
+#
+# Check two empty strip in middle - if both occupied, 1p
+# Check swatches to determine if 2p or not
+#
+#
+# ALT STRAT - locate all occupied areas. Biggest one is current.
+#   
+# Chuck all set pixels in a heap, indexed by x/y
+# start with first pixel - add all pixels within 2px of bounds of group
+#   if no pixels, start a new group
 describe 'extracting scores' do
   def self.fixture(name, score, current, total)
     it "extracts correct data from #{name}" do

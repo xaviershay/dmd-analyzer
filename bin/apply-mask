@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+require 'logger'
+Signal.trap("SIGPIPE", "SYSTEM_DEFAULT")
+
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
+
+require 'image'
+
+mask_file = ARGV.shift
+filename = ARGV.shift
+
+mask_i = Image.from_json(File.read(mask_file))
+i = Image.from_json(File.read(filename))
+
+i.copy_mask!(mask_i)
+
+$logger = Logger.new(STDOUT)
+$logger.info "Mask:\n" + i.mask_image.formatted if i.masked?
+$logger.info "Image:\n" + i.formatted

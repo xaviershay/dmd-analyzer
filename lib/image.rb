@@ -71,6 +71,10 @@ class Image
     self.mask = Bitwise.new("\xFF" * (width*height/8.0).ceil)
   end
 
+  def copy_mask!(other)
+    self.mask = other.mask
+  end
+
   def mask!(x, y, w, h)
     self.mask = mask_from_rect(x, y, w, h)
   end
