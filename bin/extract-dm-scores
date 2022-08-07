@@ -267,7 +267,7 @@ module ScreenMatcher
           player_number: state.fetch(:current_player),
           game_id: state.fetch(:game_id)
         )
-        state = {}
+        state.clear
       end
     end
   end
