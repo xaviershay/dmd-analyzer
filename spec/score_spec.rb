@@ -1,25 +1,6 @@
 require 'image'
 
 module DigitMatcher
-  class Score1P
-    def initialize
-      @templates = (0..9).to_a.map do |n|
-        [n, (Image.from_json(File.read("masks/dm/digits/large-1p/#{n}.json")) rescue nil)]
-      end.select {|_, i| i}
-      @separator = Image.from_json(File.read("masks/dm/digits/large-1p/separator.json"))
-    end
-
-    def detect(number)
-      # TODO: doing a first pass for width might be quicker? Might not be
-      # material though.
-      return ',' if @separator == number
-      t = @templates.detect {|n, template|
-        template == number
-      }
-      t[0] if t
-    end
-  end
-
   class Score
     def initialize(label)
       @templates = (0..9).to_a.map do |n|
@@ -48,11 +29,9 @@ module Screen
     )
       @mask = Image.from_json(File.read(mask))
       @matchers_by_height = {
-        20 => [DigitMatcher::Score.new("large-1p")],
+        20 => [DigitMatcher::Score.new("1p-large")],
         16 => [DigitMatcher::Score.new("4p-normal"), DigitMatcher::Score.new("4p-skinny")]
       }
-
-     #  DigitMatcher::Score1P.new
     end
 
     def add_pixel_to_group(group, pixel)
