@@ -19,6 +19,25 @@ module DigitMatcher
       t[0] if t
     end
   end
+
+  class Score
+    def initialize(label)
+      @templates = (0..9).to_a.map do |n|
+        [n, (Image.from_json(File.read("masks/dm/digits/#{label}/#{n}.json")) rescue nil)]
+      end.select {|_, i| i}
+      @separator = Image.from_json(File.read("masks/dm/digits/#{label}/separator.json"))
+    end
+
+    def detect(number)
+      # TODO: doing a first pass for width might be quicker? Might not be
+      # material though.
+      return ',' if @separator == number
+      t = @templates.detect {|n, template|
+        template == number
+      }
+      t[0] if t
+    end
+  end
 end
 
 module Screen
@@ -28,11 +47,15 @@ module Screen
      # digit_matcher: DigitMatcher::Score1P.new)
     )
       @mask = Image.from_json(File.read(mask))
-      @digit_matcher = DigitMatcher::Score1P.new
+      @matcher_by_height = {
+        20 => DigitMatcher::Score.new("large-1p"),
+        16 => DigitMatcher::Score.new("4p-skinny")
+      }
+
+     #  DigitMatcher::Score1P.new
     end
 
     def add_pixel_to_group(group, pixel)
-      # (group[:pixels] ||= []) << pixel
       group[:max_x] = pixel[0] if pixel[0] > group.fetch(:max_x, -1)
       group[:max_y] = pixel[1] if pixel[1] > group.fetch(:max_y, -1)
       group[:min_x] = pixel[0] if pixel[0] < group.fetch(:min_x, 2 ** 32)
@@ -113,20 +136,22 @@ module Screen
       end
       bounds << [region_start, digits_image.width-1]
 
-      ds = [2, 5, 3, ",", "3", "3", "0"]
+      ds = [1, 7, 5, ",", 7, 4, 0, ",", 0, 4, 0]
 
       success = true
       digits = []
+      matcher = @matcher_by_height.fetch(digits_image.height)
       bounds.zip(ds).each do |b, d|
         # TODO: 19 is hard coded for 1p big number. It's either 19 or 20
         # depending on if a comma exists.
-        i = digits_image.fit_to_masked_content(b[0], 0, b[1] - b[0] + 1, 19)
-        # puts "---"
-        # puts i.formatted
-        # output_file = "masks/dm/digits/large-1p/#{d == "," ? "separator" : d}.json"
-        # puts output_file
-        # File.write(output_file, i.to_json)
-        t = @digit_matcher.detect(i)
+        i = digits_image.fit_to_masked_content(b[0], 0, b[1] - b[0] + 1, digits_image.height - 1)
+        #puts "---"
+        #puts i.formatted
+        #output_file = "masks/dm/digits/4p-skinny/#{d == "," ? "separator" : d}.json"
+        #puts output_file
+        #File.write(output_file, i.to_json)
+        #next
+        t = matcher.detect(i)
 
         unless t
           success = false
@@ -141,7 +166,13 @@ module Screen
           total += d * (10 ** i)
         end
 
-        {player: 1, player_count: gs.size, score: total}
+        player = gs
+          .sort_by {|g| g[:min_x] + g[:min_y] * image.width }
+          .map {|g| g[:max_y] - g[:min_y] }
+          .each_with_index
+          .max_by {|g, i| g }[1] + 1
+
+        {player: player, player_count: gs.size, score: total}
       end
     end
   end
