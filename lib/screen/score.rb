@@ -129,12 +129,16 @@ module Screen
 
         unless t
           success = false
-          break
+          break unless extract_digits
         end
 
         digits.push t unless t == ','
       end
 
+      data = {}
+      if extract_digits
+        data[:digit_images] = digit_images
+      end
       if success && !digits.empty?
         # Now we have all our digits, calculate the actual score.
         total = digits.reverse.each.with_index.map do |d, i|
@@ -157,10 +161,10 @@ module Screen
           .each_with_index
           .max_by {|g, i| g }[1] + 1
 
-        data = {player: player, player_count: segments.size, score: total}
-        data[:digit_images] = digit_images if extract_digits
-        data
+        data.merge!(player: player, player_count: segments.size, score: total)
       end
+
+      data unless data.empty?
     end
 
     private

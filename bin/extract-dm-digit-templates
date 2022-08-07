@@ -7,6 +7,7 @@ $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
 Signal.trap("SIGPIPE", "SYSTEM_DEFAULT")
 require 'pin2dmd_dump'
+require 'screen/score'
 
 options = {test_run: false}
 OptionParser.new do |opts|
@@ -46,39 +47,26 @@ $logger.info("Loaded #{filename}")
 
 $logger.info("Frames: #{dump.frames.length}")
 
-
 mask = Image.from_json(File.read("masks/dm/ball.json"))
 
 f = dump.frames.fetch(options.fetch(:frame))
 image = f.monochrome_image
-if image.matches_mask?(mask)
-  $logger.info("Processing frame #{options.fetch(:frame)}:\n" + image.formatted)
-  image.mask!(0, 0, 128, 23) # extract just the numbers
 
-  region_start = nil
-  bounds = []
+$logger.info("Processing frame #{options.fetch(:frame)}:\n" + image.formatted)
 
-  (0...image.width).each do |x|
-    empty = image.region_empty?(x, 0, 1, 23)
-    if !region_start && !empty
-      region_start = x
-    elsif region_start && empty
-      bounds << [region_start, x]
-      region_start = nil
-    end
-  end
+data = Screen::Score.new.analyze!(image, extract_digits: true)
 
-  names = options.fetch(:score)
-  digits = []
-  bounds.zip(names).each do |bound, name|
-    name = "separator" if name == ","
-    digit_filename = File.join(options.fetch(:output_file), name + ".json")
-    image.mask!(bound[0], 0, bound[1] - bound[0], 23)
-    number = image.fit_to_content
-    $logger.info("Exporting to #{digit_filename}")
-    File.write(digit_filename, number.to_json) unless options[:test_run]
-  end
-else
-  $logger.error("Frame does not match ball mask!\n" + image.formatted)
+unless data
+  $logger.error("Frame does not contain a score")
+  exit 1
 end
+
+names = options.fetch(:score)
+data[:digit_images].zip(names).each do |image, name|
+  name = "separator" if name == ","
+  digit_filename = File.join(options.fetch(:output_file), name + ".json")
+  $logger.info("Exporting to #{digit_filename}")
+  File.write(digit_filename, image.to_json) unless options[:test_run]
+end
+
 $logger.info("Test mode completed") if options.fetch(:test_run)
