@@ -47,9 +47,9 @@ module Screen
      # digit_matcher: DigitMatcher::Score1P.new)
     )
       @mask = Image.from_json(File.read(mask))
-      @matcher_by_height = {
-        20 => DigitMatcher::Score.new("large-1p"),
-        16 => DigitMatcher::Score.new("4p-skinny")
+      @matchers_by_height = {
+        20 => [DigitMatcher::Score.new("large-1p")],
+        16 => [DigitMatcher::Score.new("4p-normal"), DigitMatcher::Score.new("4p-skinny")]
       }
 
      #  DigitMatcher::Score1P.new
@@ -136,22 +136,27 @@ module Screen
       end
       bounds << [region_start, digits_image.width-1]
 
-      ds = [1, 7, 5, ",", 7, 4, 0, ",", 0, 4, 0]
+      ds = [6, ",", 6, 6, 0]
+      ds = []
+      ds = [1, ",", 2, 5, 0, ",", 0, 0, 0]
 
       success = true
       digits = []
-      matcher = @matcher_by_height.fetch(digits_image.height)
+      matchers = @matchers_by_height.fetch(digits_image.height)
+      # puts image.formatted
       bounds.zip(ds).each do |b, d|
         # TODO: 19 is hard coded for 1p big number. It's either 19 or 20
         # depending on if a comma exists.
         i = digits_image.fit_to_masked_content(b[0], 0, b[1] - b[0] + 1, digits_image.height - 1)
-        #puts "---"
-        #puts i.formatted
-        #output_file = "masks/dm/digits/4p-skinny/#{d == "," ? "separator" : d}.json"
-        #puts output_file
-        #File.write(output_file, i.to_json)
-        #next
-        t = matcher.detect(i)
+       # puts "---"
+       # puts i.formatted
+       # output_file = "masks/dm/digits/4p-normal/#{d == "," ? "separator" : d}.json"
+       # puts output_file
+       # puts i.height
+       # File.write(output_file, i.to_json)
+       # next
+        # TODO: Abort after first match
+        t = matchers.map {|m| m.detect(i) }.compact.first
 
         unless t
           success = false
@@ -167,7 +172,13 @@ module Screen
         end
 
         player = gs
-          .sort_by {|g| g[:min_x] + g[:min_y] * image.width }
+          .sort_by {|g|
+            midpoint = [
+              (g[:min_x] + (g[:max_x] - g[:min_x]) / 2.0) / (image.width / 2),
+              (g[:min_y] + (g[:max_y] - g[:min_y]) / 2.0) / (image.height / 2)
+            ]
+            midpoint[0] + midpoint[1] * 2
+          }
           .map {|g| g[:max_y] - g[:min_y] }
           .each_with_index
           .max_by {|g, i| g }[1] + 1
@@ -208,12 +219,12 @@ describe 'extracting scores' do
 
   fixture "dm/1p-score", 253330, 1, 1
   fixture "dm/2p-1p-score", 6660, 1, 2
-  fixture "dm/2p-2p-score", 1000000, 1, 2
+  fixture "dm/2p-2p-score", 1000000, 2, 2
   fixture "dm/3p-1p-score", 253330, 1, 3
   fixture "dm/3p-2p-score", 250000, 2, 3
   fixture "dm/3p-3p-score", 250000, 3, 3
   fixture "dm/4p-1p-score", 750000, 1, 4
-  fixture "dm/4p-2p-score", 100000, 2, 4
+  fixture "dm/4p-2p-score", 503330, 2, 4
   fixture "dm/4p-3p-score", 1250000, 3, 4
   fixture "dm/4p-4p-score", 10010, 4, 4
   fixture "dm/4p-2p-big-score", 175740040, 2, 4
