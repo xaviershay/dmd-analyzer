@@ -3,10 +3,11 @@ class DigitMatcher
     @templates = (0..9).to_a.map do |n|
       [n, (Image.from_json(File.read("#{dir}/#{n}.json")) rescue nil)]
     end.select {|_, i| i}
-    @separator = Image.from_json(File.read("#{dir}/separator.json"))
+    @separator = Image.from_json(File.read("#{dir}/separator.json")) rescue nil
   end
 
   def height
+    return 0 if @templates.empty?
     @templates.first[1].height + 1
   end
 

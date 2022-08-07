@@ -17,6 +17,7 @@ describe 'extracting scores' do
   end
 
   fixture "dm/1p-score", 253330, 1, 1
+  fixture "dm/1p-zero", 0, 1, 1
   fixture "dm/2p-1p-score", 6660, 1, 2
   fixture "dm/2p-2p-score", 1000000, 2, 2
   fixture "dm/3p-1p-score", 253330, 1, 3

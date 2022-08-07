@@ -10,9 +10,10 @@ module Screen
       digits: "masks/dm/digits"
     )
       @mask = Image.from_json(File.read(mask))
-      @matchers_by_height = Dir[File.join(digits, "**")].map do |dir|
+      matchers = Dir[File.join(digits, "**")].map do |dir|
         DigitMatcher.new(dir)
-      end.group_by(&:height).to_h
+      end
+      @matchers_by_height = matchers.group_by {|x| x.height-1}.to_h
     end
 
     def analyze!(image, extract_digits: false)
@@ -84,6 +85,8 @@ module Screen
       # largest one, and that's what we want to extract the score from.
       largest_segment = segments[0]
 
+      return unless largest_segment
+
       digits_image = image.fit_to_masked_content(
         largest_segment[:min_x],
         largest_segment[:min_y],
@@ -96,10 +99,12 @@ module Screen
       region_start = nil
       bounds = []
 
+      # For this to work for large digits, we need to lop of the bottom pixel
+      # to remove the tail from any commas if any, hence height minus 1.
+      height = (digits_image.height + 1) / 2 * 2 - 1
+
       (0...digits_image.width).each do |x|
-        # For this to work for large digits, we need to lop of the bottom pixel
-        # to remove the tail from any commas, hence height minus 1.
-        empty = digits_image.region_empty?(x, 0, 1, digits_image.height - 1)
+        empty = digits_image.region_empty?(x, 0, 1, height)
         if !region_start && !empty
           region_start = x
         elsif region_start && empty
@@ -112,7 +117,8 @@ module Screen
       success = true
       digits = []
       digit_images = []
-      matchers = @matchers_by_height.fetch(digits_image.height)
+      matchers = @matchers_by_height[height]
+      return unless matchers
       bounds.each do |b|
         # We also need to lop off the bottom pixel here to avoid any errant
         # comma pixels that might prevent matching.
@@ -120,7 +126,7 @@ module Screen
           b[0],
           0,
           b[1] - b[0] + 1,
-          digits_image.height - 1
+          height
         )
         digit_images.push(i)
 
@@ -165,6 +171,10 @@ module Screen
       end
 
       data unless data.empty?
+    rescue
+      image.clear_mask!
+      puts image.formatted
+      raise
     end
 
     private

@@ -21,6 +21,8 @@ bin/create-mask -i data/dm-3p-1ball.raw.gz -o spec/fixtures/dm/3p-2p-score.json 
 bin/create-mask -i data/dm-3p-1ball.raw.gz -o spec/fixtures/dm/3p-3p-score.json --frame 685 -v
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o spec/fixtures/dm/1p-score.json --frame 131 -v
 
+bin/create-mask -i data/dm-1p-3ball.raw.gz -o spec/fixtures/dm/1p-zero.json --frame 24 -v
+
 # Digits
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 23 -s 1,100,000 -v
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 44 -s 1,200,000 -v
@@ -31,3 +33,5 @@ bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 126 -s 1,700,000 -v
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 145 -s 1,800,000 -v
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 161 -s 1,900,000 -v
+
+bin/extract-dm-digit-templates -i data/dm-1p-3ball.raw.gz -o masks/dm/digits/1p-fat -f 24 -s 00 -v
