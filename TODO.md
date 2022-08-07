@@ -9,3 +9,4 @@
 * [DONE] Record a multiplayer game to figure out best way to detect
 * Work through `bin/missing-digit-templates` for multiplayer
 * Sketch out a UI in the rails app
+* Extract and test the non-score screens out of script and into lib
