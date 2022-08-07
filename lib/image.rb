@@ -140,6 +140,8 @@ class Image
   end
 
   def ==(other)
+    return false unless other
+
     # TODO: Think through semantics of including mask here or not
     bits.raw == other.bits.raw &&
       width == other.width &&

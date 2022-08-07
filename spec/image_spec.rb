@@ -27,23 +27,30 @@ describe Image do
     end
   end
 
-  describe '#hash' do
-    it 'hashes bits the same' do
-      i1 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
-      i2 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
-      i3 = Image.new(Bitwise.new(pack_bits "011101111"), width: 3, height: 3)
-
-      expect(i1.hash).to eq(i2.hash)
-      expect(i1.hash).to_not eq(i3.hash)
+  describe 'equality' do
+    it 'is not equal to nil' do
+      i = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+      expect(i  == nil).to eq(false)
     end
 
-    it 'includes dimensions in hash' do
-      i1 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
-      i2 = Image.new(Bitwise.new(pack_bits "111101111"), width: 2, height: 3)
-      i3 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 2)
+    describe '#hash' do
+      it 'hashes bits the same' do
+        i1 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+        i2 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+        i3 = Image.new(Bitwise.new(pack_bits "011101111"), width: 3, height: 3)
 
-      expect(i1.hash).to_not eq(i2.hash)
-      expect(i1.hash).to_not eq(i3.hash)
+        expect(i1.hash).to eq(i2.hash)
+        expect(i1.hash).to_not eq(i3.hash)
+      end
+
+      it 'includes dimensions in hash' do
+        i1 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 3)
+        i2 = Image.new(Bitwise.new(pack_bits "111101111"), width: 2, height: 3)
+        i3 = Image.new(Bitwise.new(pack_bits "111101111"), width: 3, height: 2)
+
+        expect(i1.hash).to_not eq(i2.hash)
+        expect(i1.hash).to_not eq(i3.hash)
+      end
     end
   end
 
