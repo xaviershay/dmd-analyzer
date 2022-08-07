@@ -6,3 +6,17 @@ bin/create-mask -i data/dm-1p-3ball.raw.gz --frame 166 -v --mask 0,0,128,32 -o m
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o masks/dm/total_bonus.json --frame 348 -v --mask 14,2,100,10
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o masks/dm/final_score.json --frame 1417 -v --mask 40,27,50,5
 bin/create-mask -i data/test-dump-1.raw.gz -o masks/dm/ball.json --frame 399 --mask 20,27,18,5 -v
+
+# Specs
+bin/create-mask -i data/dm-4p-1ball.raw.gz -o spec/fixtures/dm/4p-1p-score.json --frame 280 -v
+bin/create-mask -i data/dm-4p-1ball.raw.gz -o spec/fixtures/dm/4p-2p-score.json --frame 536 -v
+bin/create-mask -i data/dm-4p-1ball.raw.gz -o spec/fixtures/dm/4p-3p-score.json --frame 805 -v
+bin/create-mask -i data/dm-4p-1ball.raw.gz -o spec/fixtures/dm/4p-4p-score.json --frame 969 -v
+bin/create-mask -i data/dm-4p-big-score.raw.gz -o spec/fixtures/dm/4p-2p-big-score.json --frame 28 -v
+bin/create-mask -i data/dm-4p-big-first-score.raw.gz -o spec/fixtures/dm/4p-2p-big-score-2.json --frame 28 -v
+bin/create-mask -i data/dm-2p-2ball.raw.gz -o spec/fixtures/dm/2p-1p-score.json --frame 102 -v
+bin/create-mask -i data/dm-2p-2ball.raw.gz -o spec/fixtures/dm/2p-2p-score.json --frame 345 -v
+bin/create-mask -i data/dm-3p-1ball.raw.gz -o spec/fixtures/dm/3p-1p-score.json --frame 88 -v
+bin/create-mask -i data/dm-3p-1ball.raw.gz -o spec/fixtures/dm/3p-2p-score.json --frame 379 -v
+bin/create-mask -i data/dm-3p-1ball.raw.gz -o spec/fixtures/dm/3p-3p-score.json --frame 685 -v
+bin/create-mask -i data/dm-1p-3ball.raw.gz -o spec/fixtures/dm/1p-score.json --frame 131 -v

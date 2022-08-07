@@ -12,5 +12,5 @@ filename = ARGV.shift
 i = Image.from_json(File.read(filename))
 
 $logger = Logger.new(STDOUT)
-$logger.info "Mask:\n" + i.mask_image.formatted
+$logger.info "Mask:\n" + i.mask_image.formatted if i.masked?
 $logger.info "Image:\n" + i.formatted

@@ -45,11 +45,13 @@ image = dump.frames.fetch(frame).monochrome_image
 
 $logger.info "Extracted frame #{frame}:\n" + image.formatted
 
-mask = options.fetch(:mask)
-image.mask!(*mask)
+mask = options[:mask]
+if mask
+  image.mask!(*mask)
 
-$logger.info "Mask #{mask.inspect}:\n" + image.mask_image.formatted
-$logger.info "Masked image:\n" + image.formatted
+  $logger.info "Mask #{mask.inspect}:\n" + image.mask_image.formatted
+  $logger.info "Masked image:\n" + image.formatted
+end
 
 if output_file = options[:output_file]
   File.write(output_file, image.to_json)

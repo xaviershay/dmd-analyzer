@@ -152,10 +152,13 @@ class Image
     [bits.raw, width, height].hash
   end
 
-
   def region_empty?(x, y, w, h)
     region_mask = mask_from_rect(x, y, w, h)
     (bits & region_mask).cardinality == 0
+  end
+  
+  def masked?
+    mask.cardinality == width * height - 1
   end
 
   def add(image)
