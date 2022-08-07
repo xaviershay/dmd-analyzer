@@ -1,5 +1,26 @@
 require 'image'
 
+module DigitMatcher
+  class Score1P
+    def initialize
+      @templates = (0..9).to_a.map do |n|
+        [n, (Image.from_json(File.read("masks/dm/digits/large-1p/#{n}.json")) rescue nil)]
+      end.select {|_, i| i}
+      @separator = Image.from_json(File.read("masks/dm/digits/large-1p/separator.json"))
+    end
+
+    def detect(number)
+      # TODO: doing a first pass for width might be quicker? Might not be
+      # material though.
+      return ',' if @separator == number
+      t = @templates.detect {|n, template|
+        template == number
+      }
+      t[0] if t
+    end
+  end
+end
+
 module Screen
   class Score
     def initialize(
@@ -7,6 +28,7 @@ module Screen
      # digit_matcher: DigitMatcher::Score1P.new)
     )
       @mask = Image.from_json(File.read(mask))
+      @digit_matcher = DigitMatcher::Score1P.new
     end
 
     def add_pixel_to_group(group, pixel)
@@ -54,6 +76,9 @@ module Screen
         g[:max_y] - g[:min_y] > 10
       end
 
+      # if two groups share same height +/- 1 and are less than 3 px away from each other, join them
+      # only need to do this if height > threshold
+      # join all groups > threshold
       b = gs[0].reduce {|a, b|
         a[:max_x] = [a[:max_x], b[:max_x]].max
         a[:max_y] = [a[:max_y], b[:max_y]].max
@@ -70,11 +95,54 @@ module Screen
         # puts i.formatted
       end
 
-      # if two groups share same height +/- 1 and are less than 3 px away from each other, join them
-      # only need to do this if height > threshold
-      # join all groups > threshold
-      nil
-      {player_count: gs.size}
+      g = gs[0]
+
+      digits_image = image.fit_to_masked_content(g[:min_x], g[:min_y], g[:max_x] - g[:min_x] + 1, g[:max_y] - g[:min_y] + 1)
+      region_start = nil
+      bounds = []
+
+      # puts digits_image.height
+      (0...digits_image.width).each do |x|
+        empty = digits_image.region_empty?(x, 0, 1, digits_image.height - 1)
+        if !region_start && !empty
+          region_start = x
+        elsif region_start && empty
+          bounds << [region_start, x]
+          region_start = nil
+        end
+      end
+      bounds << [region_start, digits_image.width-1]
+
+      ds = [2, 5, 3, ",", "3", "3", "0"]
+
+      success = true
+      digits = []
+      bounds.zip(ds).each do |b, d|
+        # TODO: 19 is hard coded for 1p big number. It's either 19 or 20
+        # depending on if a comma exists.
+        i = digits_image.fit_to_masked_content(b[0], 0, b[1] - b[0] + 1, 19)
+        # puts "---"
+        # puts i.formatted
+        # output_file = "masks/dm/digits/large-1p/#{d == "," ? "separator" : d}.json"
+        # puts output_file
+        # File.write(output_file, i.to_json)
+        t = @digit_matcher.detect(i)
+
+        unless t
+          success = false
+          break
+        end
+
+        digits.push t unless t == ','
+      end
+      if success && !digits.empty?
+        total = 0
+        digits.reverse.each.with_index.each do |d, i|
+          total += d * (10 ** i)
+        end
+
+        {player: 1, player_count: gs.size, score: total}
+      end
     end
   end
 end
