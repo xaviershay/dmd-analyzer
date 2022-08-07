@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+expected = ((0..9).to_a + %w(separator)).map {|x| "#{x}.json" }
+Dir["masks/dm/digits/**"].sort.each do |f|
+  (expected - Dir[f + "/*.json"].sort.map {|d| File.basename(d) }).each do |m|
+    puts "#{f}/#{m}"
+  end
+end
