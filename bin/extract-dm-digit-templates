@@ -8,6 +8,7 @@ $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 Signal.trap("SIGPIPE", "SYSTEM_DEFAULT")
 require 'pin2dmd_dump'
 require 'screen/score'
+require 'screen/combos'
 
 options = {test_run: false}
 OptionParser.new do |opts|
@@ -54,7 +55,7 @@ image = f.monochrome_image
 
 $logger.info("Processing frame #{options.fetch(:frame)}:\n" + image.formatted)
 
-data = Screen::Score.new.analyze!(image, extract_digits: true)
+data = Screen::Score.new.analyze!(image, extract_digits: true) || Screen::Combos.new.analyze!(image, extract_digits: true)
 
 unless data
   $logger.error("Frame does not contain a score")

@@ -6,7 +6,9 @@ bin/create-mask -i data/dm-1p-3ball.raw.gz --frame 166 -v --mask 0,0,128,32 -o m
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o masks/dm/total_bonus.json --frame 348 -v --mask 14,2,100,10
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o masks/dm/final_score.json --frame 1417 -v --mask 40,27,50,5
 bin/create-mask -i data/test-dump-1.raw.gz -o masks/dm/ball.json --frame 399 --mask 20,27,18,5 -v
+bin/create-mask -i data/dm-combos.raw.gz -o masks/dm/combos.json --frame 139 --mask 36,0,92,16 -v
 
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 139 -s 2 -v
 # Specs
 bin/create-mask -i data/dm-4p-1ball.raw.gz -o spec/fixtures/dm/4p-1p-score.json --frame 280 -v
 bin/create-mask -i data/dm-4p-1ball.raw.gz -o spec/fixtures/dm/4p-2p-score.json --frame 536 -v
@@ -22,6 +24,9 @@ bin/create-mask -i data/dm-3p-1ball.raw.gz -o spec/fixtures/dm/3p-3p-score.json 
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o spec/fixtures/dm/1p-score.json --frame 131 -v
 
 bin/create-mask -i data/dm-1p-3ball.raw.gz -o spec/fixtures/dm/1p-zero.json --frame 24 -v
+bin/create-mask -i data/dm-1p-3ball.raw.gz -o spec/fixtures/dm/bonus-1000000.json --frame 348 -v
+
+bin/create-mask -i data/dm-combos.raw.gz -o spec/fixtures/dm/combos-2.json --frame 139 -v
 
 # Digits
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 23 -s 1,100,000 -v
@@ -35,3 +40,16 @@ bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1
 bin/extract-dm-digit-templates -i data/dm-all-digits.raw.gz -o masks/dm/digits/1p-large -f 161 -s 1,900,000 -v
 
 bin/extract-dm-digit-templates -i data/dm-1p-3ball.raw.gz -o masks/dm/digits/1p-fat -f 24 -s 00 -v
+
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 139 -s 2 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 188 -s 3 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 211 -s 4 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 233 -s 5 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 274 -s 6 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 317 -s 7 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 390 -s 9 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 418 -s 10 -v
+bin/extract-dm-digit-templates -i data/dm-combos.raw.gz -o masks/dm/digits/combos -f 569 -s 11 -v
+
+# Went too fast in the previous recording, missed this one...
+bin/extract-dm-digit-templates -i data/dm-combos-8.raw.gz -o masks/dm/digits/combos -f 60 -s 8 -v

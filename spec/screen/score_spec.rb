@@ -9,7 +9,7 @@ describe 'extracting scores' do
       m = Screen::Score.new
       r = m.analyze!(i)
       expect(r).to eq(
-        score: score,
+        value: score,
         player: current,
         player_count: total
       )

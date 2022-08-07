@@ -17,6 +17,16 @@ $logger.info("Loaded #{filename}")
 
 $logger.info("Frames: #{dump.frames.length}")
 
+require 'screen/score'
+require 'screen/bonus'
+require 'screen/combos'
+
+screens = [
+  Screen::Score.new,
+  Screen::Bonus.new,
+  Screen::Combos.new
+]
+
 dump.frames.each.with_index do |f, i|
   if frame == 0 || frame == i
     image = f.monochrome_image
@@ -24,6 +34,12 @@ dump.frames.each.with_index do |f, i|
     $logger.info(
       "Frame #{i}, timestamp #{f.timestamp}:\n" + image.formatted
     )
+    if frame == i
+      screens.each do |s|
+        data = s.analyze!(image)
+        $logger.info "#{s.class}: #{data.inspect}"
+      end
+    end
   end
   break if frame > 0 && frame < i
 end

@@ -107,6 +107,8 @@ state = {}
 
 
 require 'screen/score'
+require 'screen/bonus'
+require 'screen/combos'
 
 module ScreenMatcher
   class Score
@@ -119,13 +121,14 @@ module ScreenMatcher
       data = @screen.analyze!(image)
       return unless data
 
-      total = data.fetch(:score)
+      total = data.fetch(:value)
       player = data.fetch(:player)
       if total != state[:previous_total]
         state[:previous_total] = total
         if total == 0
           if !state[:playing]
             state[:playing] = true
+            state[:previous_bonus] = nil
             state[:just_drained] = false
             state[:just_ball_saved] = false
             state[:game_id] = SecureRandom.uuid
@@ -141,12 +144,13 @@ module ScreenMatcher
           if !state[:playing]
             $logger.error "Unexpected score update while not playing"
           else
+            state[:previous_bonus] = nil
             state[:just_drained] = false
             state[:just_ball_saved] = false
             state[:current_player] = player
             events.push(
               type: :update_score,
-              score: total,
+              value: total,
               player_number: player,
               game_id: state.fetch(:game_id)
             )
@@ -158,26 +162,67 @@ module ScreenMatcher
     end
   end
 
-  class Drain
-    def initialize(logger:, mask: "masks/dm/total_bonus.json")
+  class Bonus
+    def initialize(logger:)
       @logger = logger
-      @mask = Image.from_json(File.read(mask))
+      @screen = Screen::Bonus.new
     end
 
     def analyze!(state, events, image)
-      return unless image.matches_mask?(@mask)
+      data = @screen.analyze!(image)
+      return unless data
+
+      value = data.fetch(:value)
       if state[:playing]
-        if !state[:just_drained]
-          state[:just_drained] = true
+        if state[:previous_bonus] != value
           events.push(
-            type: :drain,
-            player_number: state.fetch(:current_player),
+            type: :total_bonus,
+            value: value,
+            player_number: state.fetch(:current_player, 1),
             game_id: state.fetch(:game_id)
           )
+          state[:previous_bonus] = value
+
+          if !state[:just_drained]
+            state[:just_drained] = true
+            events.push(
+              type: :drain,
+              player_number: state.fetch(:current_player),
+              game_id: state.fetch(:game_id)
+            )
+          end
         end
-      else
-        $logger.error "Unexpected total bonus while not playing"
+
+        return true
       end
+
+      return false
+    end
+  end
+
+  class Combos
+    def initialize(logger:)
+      @logger = logger
+      @screen = Screen::Combos.new
+    end
+
+    def analyze!(state, events, image)
+      data = @screen.analyze!(image)
+      return unless data
+
+      combos = data.fetch(:value)
+      if state[:previous_combos] != combos
+        events.push(
+          type: :combos,
+          value: combos,
+          player_number: state.fetch(:current_player, 1),
+          game_id: state.fetch(:game_id)
+        )
+        state[:previous_combos] = combos
+        return true
+      end
+
+      return false
     end
   end
 
@@ -229,9 +274,10 @@ end
 
 matchers = [
   ScreenMatcher::Score,
-  ScreenMatcher::Drain,
   ScreenMatcher::BallSave,
-  ScreenMatcher::GameEnd
+  ScreenMatcher::Combos,
+  ScreenMatcher::GameEnd,
+  ScreenMatcher::Bonus
 ].map {|x| x.new(logger: $logger) }
 
 RubyProf.start if prof
