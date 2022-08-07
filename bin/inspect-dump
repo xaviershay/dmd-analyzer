@@ -8,6 +8,7 @@ Signal.trap("SIGPIPE", "SYSTEM_DEFAULT")
 require 'pin2dmd_dump'
 
 filename = ARGV.shift
+frame = ARGV.shift.to_i
 
 $logger = Logger.new(STDOUT)
 $logger.info("Loading #{filename}")
@@ -17,7 +18,12 @@ $logger.info("Loaded #{filename}")
 $logger.info("Frames: #{dump.frames.length}")
 
 dump.frames.each.with_index do |f, i|
-  $logger.info(
-    "Frame #{i}, timestamp #{f.timestamp}:\n" + f.monochrome_image.formatted
-  )
+  if frame == 0 || frame == i
+    image = f.monochrome_image
+
+    $logger.info(
+      "Frame #{i}, timestamp #{f.timestamp}:\n" + image.formatted
+    )
+  end
+  break if frame > 0 && frame < i
 end

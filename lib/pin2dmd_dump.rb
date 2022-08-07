@@ -50,15 +50,12 @@ class Pin2DmdDump
     raise "unexpected height/width" unless [width, height] == [128, 32]
 
     headerLength = 8
-    data = data[headerLength-1..-1]
+    data = data[headerLength..-1]
 
     frames = []
 
     frame_bytes = 128*32/8
 
-    # My test file has left over bytes. First guess is that the dumper simply
-    # terminates mid frame whenever you click stop, but this isn't important
-    # for my purposes so I haven't investigated.
     while data.length >= frame_bytes * images_per_frame + 4
       # I'll probably come to regret this, but here I've said a frame consists
       # of multiple images, though in wpc-emu what we're calling an Image here
@@ -84,6 +81,9 @@ class Pin2DmdDump
       }
 
       frames << Frame.new(uptime, images)
+    end
+    if data.length > 0
+      raise "Unexpected trailing bytes: #{data.inspect}"
     end
 
     new(frames)

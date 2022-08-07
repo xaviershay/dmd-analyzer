@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -ex
+
+bin/create-mask -i data/dm-1p-3ball.raw.gz --frame 166 -v --mask 0,0,128,32 -o masks/dm/ball_save.json
+bin/create-mask -i data/dm-1p-3ball.raw.gz -o masks/dm/total_bonus.json --frame 348 -v --mask 14,2,100,10
+bin/create-mask -i data/dm-1p-3ball.raw.gz -o masks/dm/final_score.json --frame 1417 -v --mask 40,27,50,5
+bin/create-mask -i data/test-dump-1.raw.gz -o masks/dm/ball.json --frame 399 --mask 20,27,18,5 -v
