@@ -93,6 +93,8 @@ module Screen
     #   * Identify all "neighbours" (within 2 pixels)
     #   * Repeat for all neighbours
     #   * Once that process terminates, start again with all remaining pixels
+    #
+    # TODO: This algorithm is currently O(garbage) and needs improvement.
     def identify_segments(image)
       bits = image.coordinates
       segments = []
