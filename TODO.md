@@ -10,4 +10,5 @@
 * Work through `bin/missing-digit-templates` for multiplayer
 * Sketch out a UI in the rails app
 * Extract and test the non-score screens out of script and into lib
-* Optimize `#identify_segments`
+* DRY `#identify_segments` with `#identify_digits`
+* Fix `extract_digits` part of screen analysis

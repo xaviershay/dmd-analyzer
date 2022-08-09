@@ -163,7 +163,7 @@ class Image
 
   def region_empty?(x, y, w, h)
     region_mask = mask_from_rect(x, y, w, h)
-    (bits & region_mask).cardinality == 0
+    (masked_bits & region_mask).cardinality == 0
   end
 
   def masked?

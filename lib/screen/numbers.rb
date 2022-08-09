@@ -76,49 +76,66 @@ module Screen
 
     private
 
-    def add_pixel_to_segment(segment, pixel)
-      segment[:max_x] = pixel[0] if pixel[0] > segment.fetch(:max_x, -1)
-      segment[:max_y] = pixel[1] if pixel[1] > segment.fetch(:max_y, -1)
-      segment[:min_x] = pixel[0] if pixel[0] < segment.fetch(:min_x, 2 ** 32)
-      segment[:min_y] = pixel[1] if pixel[1] < segment.fetch(:min_y, 2 ** 32)
-      segment
-    end
-
     # Segment image into pixel groups separated by 2 pixels or more. This is
     # sufficient to separate different player scores, but will also over
     # segment. Never mind, we fix that in the next section.
-    #
-    # This is a recursive algorithm:
-    #   * Take the first pixel
-    #   * Identify all "neighbours" (within 2 pixels)
-    #   * Repeat for all neighbours
-    #   * Once that process terminates, start again with all remaining pixels
-    #
-    # TODO: This algorithm is currently O(garbage) and needs improvement.
     def identify_segments(image)
-      bits = image.coordinates
-      segments = []
-      while true
-        current = {}
-        seed = bits.shift
-        break unless seed
+      # Start by splitting the image into horizontal strips. We know that this
+      # will neatly divide all known digit examples into one or two strips.
+      region_start = nil
+      bounds = []
+      empty = true
 
-        f = lambda do |p|
-          current = add_pixel_to_segment(current, p)
+      (0...image.height).each do |x|
+        empty = image.region_empty?(0, x, image.width, 1)
+        if !region_start && !empty
+          region_start = x
+        elsif region_start && empty
+          bounds << [region_start, x]
+          region_start = nil
+        end
+      end
+      bounds << [region_start, image.height-1] if !empty
 
-          neighbours, bits = *bits.partition {|bit|
-            bit[0].between?(current[:min_x] - 2, current[:max_x] + 2) &&
-            bit[1].between?(current[:min_y] - 2, current[:max_y] + 2)
-          }
+      # For each horizontal strip, further split it into segments where there
+      # is a two-pixel gap.
+      segments = bounds.map do |b|
+        region_start = nil
+        hbounds = []
+        empty = true
 
-          neighbours.each do |n|
-            f[n]
+        bheight = b[1] - b[0]
+        (0...image.width-1).each do |x|
+          empty = image.region_empty?(x, b[0], 2, bheight)
+          if !region_start && !empty
+            region_start = x
+          elsif region_start && empty
+            hbounds << [region_start, x]
+            region_start = nil
           end
         end
-        f[seed]
-        segments << current
+        hbounds << [region_start, image.width-1] if !empty
+        [b, hbounds]
       end
-      segments
+
+      # Flatten all the segments, and while we're at it fit each one to its
+      # contents. This is needed in a subsequent step so we can identify the
+      # "tallest" segments to stitch together and classify.
+      segments.map do |b, hbs|
+        hbs.map do |hb|
+          min_x = hb[0]
+          max_x = hb[1]
+          min_y = b[0]
+          max_y = b[1]
+          i2 = image.fit_to_masked_content(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
+          {
+            min_x: min_x,
+            max_x: max_x,
+            min_y: min_y,
+            max_y: min_y + i2.height
+          }
+        end
+      end.flatten
     end
 
     # Now to fix over segmenting. Large digits can be separated by 2 pixels
@@ -151,6 +168,7 @@ module Screen
     # Split into individual digits by identifying empty vertical lines
     # separating each.
     def identify_digits(digits_image, height)
+      # TODO: This algorithm is repeated 3 times in this file. DRY it up.
       region_start = nil
       bounds = []
 
@@ -195,7 +213,7 @@ module Screen
 
         unless t
           success = false
-          break unless extract_digits
+          break # TODO: unless extract_digits
         end
 
         digits.push t unless t == ','
