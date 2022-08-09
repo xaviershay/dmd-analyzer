@@ -76,45 +76,28 @@ module Screen
 
     private
 
-    # Segment image into pixel groups separated by 2 pixels or more. This is
-    # sufficient to separate different player scores, but will also over
-    # segment. Never mind, we fix that in the next section.
+    # Segment image into rectangular areas separated by 2 pixels or more. This
+    # is sufficient to separate different player scores, but will also over
+    # segment. Never mind, we fix that in a later step.
     def identify_segments(image)
       # Start by splitting the image into horizontal strips. We know that this
       # will neatly divide all known digit examples into one or two strips.
-      region_start = nil
-      bounds = []
-      empty = true
-
-      (0...image.height).each do |x|
-        empty = image.region_empty?(0, x, image.width, 1)
-        if !region_start && !empty
-          region_start = x
-        elsif region_start && empty
-          bounds << [region_start, x]
-          region_start = nil
-        end
-      end
-      bounds << [region_start, image.height-1] if !empty
+      bounds = identify_rects(image.transpose)
 
       # For each horizontal strip, further split it into segments where there
       # is a two-pixel gap.
+      #
+      # A possible further optimisation is to go straight to digit
+      # identification here since we do basically the same algorithm later with
+      # a 1px gap to find those.
       segments = bounds.map do |b|
-        region_start = nil
-        hbounds = []
-        empty = true
-
         bheight = b[1] - b[0]
-        (0...image.width-1).each do |x|
-          empty = image.region_empty?(x, b[0], 2, bheight)
-          if !region_start && !empty
-            region_start = x
-          elsif region_start && empty
-            hbounds << [region_start, x]
-            region_start = nil
-          end
-        end
-        hbounds << [region_start, image.width-1] if !empty
+        hbounds = identify_rects(image,
+          strip_width: 2,
+          y: b[0],
+          height: bheight
+        )
+
         [b, hbounds]
       end
 
@@ -168,12 +151,20 @@ module Screen
     # Split into individual digits by identifying empty vertical lines
     # separating each.
     def identify_digits(digits_image, height)
-      # TODO: This algorithm is repeated 3 times in this file. DRY it up.
+      identify_rects(digits_image, strip_width: 1, height: height)
+    end
+
+    # Find rectangular areas of pixels separated by straight whitespace. This
+    # is weirdly parameterized, but we use very similar variations of it in a
+    # few different places and I didn't want to copy it everywhere given how
+    # ugly it still is.
+    def identify_rects(image, strip_width: 1, y: 0, height: image.height)
       region_start = nil
       bounds = []
+      empty = true
 
-      (0...digits_image.width).each do |x|
-        empty = digits_image.region_empty?(x, 0, 1, height)
+      (0...image.width - (strip_width - 1)).each do |x|
+        empty = image.region_empty?(x, y, strip_width, height)
         if !region_start && !empty
           region_start = x
         elsif region_start && empty
@@ -181,7 +172,7 @@ module Screen
           region_start = nil
         end
       end
-      bounds << [region_start, digits_image.width-1]
+      bounds << [region_start, image.width-1] if !empty
       bounds
     end
 

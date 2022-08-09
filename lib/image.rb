@@ -3,6 +3,27 @@ require 'base64'
 require 'json'
 
 class Image
+  # Fake transposition so we don't need to actually shuffle around bits. Good
+  # enough for current purposes.
+  class Transposed
+    attr_reader :image
+
+    def self.wrap(image)
+      new(image)
+    end
+
+    def initialize(image)
+      @image = image
+    end
+
+    def width; image.height; end
+    def height; image.width; end
+
+    def region_empty?(x, y, w, h)
+      image.region_empty?(y, x, h, w)
+    end
+  end
+
   def self.from_raw(data, width: 128, height: 32)
     # For some reason each byte is flipped, possible something in bitwise
     # library, or maybe just a quirk of output format.
@@ -204,6 +225,10 @@ class Image
     (bits & image.mask).raw == image.masked_bits.raw
   end
 
+  def transpose
+    Transposed.wrap(self)
+  end
+
   attr_reader :width, :height
 
   protected
@@ -220,6 +245,9 @@ class Image
   end
 
   def mask_from_rect(x, y, w, h)
+    if width - (x + w) < 0
+      raise "invalid dimensions: " + [x, y, w, h].inspect
+    end
     y_head = ["0" * width] * y
     y_tail = ["0" * width] * (height - (y + h))
     x_head = "0" * x
