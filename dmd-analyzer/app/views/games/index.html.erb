@@ -1,0 +1,8 @@
+<table>
+<% @games.each do |game| %>
+  <tr>
+    <td><%= game.completed_at %></td>
+    <td><%= link_to(game.high_score, game) %></td>
+  </tr>
+<% end %>
+</table>

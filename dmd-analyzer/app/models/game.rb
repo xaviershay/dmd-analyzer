@@ -6,6 +6,6 @@ class Game < ApplicationRecord
   end
 
   def calculate_high_score
-    events.where(type: :update_score).maximum("(metadata->>'score')::integer")
+    events.where(type: :update_score).maximum("(metadata->>'value')::integer")
   end
 end

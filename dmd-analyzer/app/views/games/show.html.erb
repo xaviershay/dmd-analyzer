@@ -1,0 +1,9 @@
+<table>
+  <% @game.events.order(occured_at: :desc).each do |event| %>
+    <tr>
+      <td><%= event.occured_at %></td>
+      <td><%= event.type %></td>
+      <td><code><%= event.metadata %></code></td>
+    </tr>
+  <% end %>
+</table>
