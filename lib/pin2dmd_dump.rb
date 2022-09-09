@@ -47,7 +47,7 @@ class Pin2DmdDump
     version, width, height, images_per_frame = *data[3..7].unpack("nC3")
 
     raise "invalid version" unless version == 1
-    raise "unexpected height/width" unless [width, height] == [128, 32]
+    raise "unexpected height/width: #{width}x#{height}" unless [width, height] == [128, 32]
 
     headerLength = 8
     data = data[headerLength..-1]
@@ -55,6 +55,9 @@ class Pin2DmdDump
     frames = []
 
     frame_bytes = 128*32/8
+
+    puts data.length
+    puts frame_bytes * images_per_frame + 4
 
     while data.length >= frame_bytes * images_per_frame + 4
       # I'll probably come to regret this, but here I've said a frame consists

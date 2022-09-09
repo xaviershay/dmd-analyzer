@@ -26,7 +26,7 @@ unless device
 end
 
 device.open_interface(0) do |handle|
-  name = handle.string_descriptor_ascii
+  name = handle.string_descriptor_ascii(1)
   $logger.info "Device name: #{name}"
   case name
   when "PIN2DMD" then 2
@@ -39,13 +39,18 @@ device.open_interface(0) do |handle|
   handle.claim_interface(0) do |handle|
     output = "\x01\xc3\xe8\x03" # TODO: Maybe this needs to be 64 bytes long?
     writtenBytes = handle.bulk_transfer(endpoint: 0x01, dataOut: output)
-    if writtenBytes.length != output.length
+    if writtenBytes != output.length
       $logger.error "Wrote #{writtenBytes.length} of #{output.length} bytes"
       raise
     end
 
-    readBytes = handle.bulk_transfer(endpoint: 0x01, dataIn: 3 * planeSize)
+    readBytes = handle.bulk_transfer(endpoint: 0x81, dataIn: 3 * planeSize)
 
     $logger.info "Read dump:\n" + readBytes.inspect
+
+    header = "RAW\x00\x01\x80\x20\x03\x00\x00\x00\x00".force_encoding(Encoding::ASCII_8BIT)
+    body = header + readBytes
+    puts body.length
+    File.open("dump.raw", "w", encoding: 'ascii-8bit') {|f| f.write(body) }
   end
 end
