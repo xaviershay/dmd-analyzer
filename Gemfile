@@ -6,6 +6,7 @@ gem 'libusb'
 group :development do
   gem 'ruby-prof'
   gem 'benchmark'
+  gem 'pry'
 end
 
 group :test do

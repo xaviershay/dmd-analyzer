@@ -1,15 +1,45 @@
 require 'image'
+require 'pry'
 require 'stringio'
 require 'zlib'
 
 class Pin2DmdDump
+  # TODO: Move to own file
   class Frame < Struct.new(:timestamp, :images)
     def monochrome_image
       images.reduce {|x, y| x.add(y) }
     end
+
+    def bytes
+      blah = images.map(&:to_raw).reduce(:+)
+      #binding.pry
+
+      [timestamp].pack("L<") + images.map(&:to_raw).reduce(:+)
+    end
+
+    def self.from_bytes(data, dimensions:, images:)
+      frame_bytes = dimensions.w * dimensions.h / 8
+      images_per_frame = images
+
+      uptime = data.unpack("L<").first
+      data = data[4..-1]
+      frame_data = data[0...frame_bytes * images_per_frame]
+      data = data[frame_bytes * images_per_frame..-1]
+
+      images = frame_data.chars.each_slice(frame_bytes).map(&:join).map {|x|
+        # TODO: Pass dimension object
+        Image.from_raw(x, width: dimensions.w, height: dimensions.h)
+      }
+
+      Frame.new(uptime, images)
+    end
   end
 
   attr_reader :frames, :width, :height
+
+  def dimensions
+    Dimension.wh(128, 32)
+  end
 
   def self.from_file(filename)
     data = File.read(filename, encoding: 'BINARY')
@@ -55,9 +85,6 @@ class Pin2DmdDump
     frames = []
 
     frame_bytes = 128*32/8
-
-    puts data.length
-    puts frame_bytes * images_per_frame + 4
 
     while data.length >= frame_bytes * images_per_frame + 4
       # I'll probably come to regret this, but here I've said a frame consists
