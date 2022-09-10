@@ -3,7 +3,7 @@ require 'benchmark'
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'pin2dmd_dump'
 
-dump = Pin2DmdDump.from_file("data/dm-all-digits.raw")
+dump = Pin2DmdDump.from_file("data/dm-all-digits.raw.gz")
 filename = "masks/dm/ball.json"
 mask = Image.from_json(File.read(filename))
 
