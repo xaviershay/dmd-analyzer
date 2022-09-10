@@ -1,45 +1,12 @@
 require 'image'
-require 'pry'
+require 'frame'
+require 'dimension'
 require 'stringio'
 require 'zlib'
 
+# TODO: Rename to WpcEmuDump
 class Pin2DmdDump
-  # TODO: Move to own file
-  class Frame < Struct.new(:timestamp, :images)
-    def monochrome_image
-      images.reduce {|x, y| x.add(y) }
-    end
-
-    def bytes
-      blah = images.map(&:to_raw).reduce(:+)
-      #binding.pry
-
-      [timestamp].pack("L<") + images.map(&:to_raw).reduce(:+)
-    end
-
-    def self.from_bytes(data, dimensions:, images:)
-      frame_bytes = dimensions.w * dimensions.h / 8
-      images_per_frame = images
-
-      uptime = data.unpack("L<").first
-      data = data[4..-1]
-      frame_data = data[0...frame_bytes * images_per_frame]
-      data = data[frame_bytes * images_per_frame..-1]
-
-      images = frame_data.chars.each_slice(frame_bytes).map(&:join).map {|x|
-        # TODO: Pass dimension object
-        Image.from_raw(x, width: dimensions.w, height: dimensions.h)
-      }
-
-      Frame.new(uptime, images)
-    end
-  end
-
-  attr_reader :frames, :width, :height
-
-  def dimensions
-    Dimension.wh(128, 32)
-  end
+  attr_reader :frames, :dimensions
 
   def self.from_file(filename)
     data = File.read(filename, encoding: 'BINARY')
@@ -79,6 +46,8 @@ class Pin2DmdDump
     raise "invalid version" unless version == 1
     raise "unexpected height/width: #{width}x#{height}" unless [width, height] == [128, 32]
 
+    dimensions = Dimension.wh(width, height)
+
     headerLength = 8
     data = data[headerLength..-1]
 
@@ -86,40 +55,23 @@ class Pin2DmdDump
 
     frame_bytes = 128*32/8
 
-    while data.length >= frame_bytes * images_per_frame + 4
-      # I'll probably come to regret this, but here I've said a frame consists
-      # of multiple images, though in wpc-emu what we're calling an Image here
-      # is referred to as a frame. (I did this because for our usages that
-      # naming makes sense and it's particularly confusing for a user with the
-      # original naming.)
-      #
-      # Intensity is typically calculated by counting how many images a pixel
-      # is on for throughout the frame: 0=off, 1=33%, 2=66%, 3=100%
-      # We don't care about that here though, and instead generally flatten the
-      # image to a monochrome variant.
-      #
-      # Documentation of frame format is here:
-      #
-      #     https://github.com/neophob/wpc-emu/blob/a8de4bc8bc92689930a36935cb7fb9326c920327/lib/boards/elements/output-dmd-display.js#L4
-      uptime = data.unpack("Q<").first
-      data = data[4..-1]
-      frame_data = data[0...frame_bytes * images_per_frame]
-      data = data[frame_bytes * images_per_frame..-1]
+    bytes_to_read = frame_bytes * images_per_frame + 4
+    while data.length >= bytes_to_read
+      chunk = data[0..bytes_to_read]
+      data = data[bytes_to_read..-1]
+      frame = Frame.from_bytes(chunk, dimensions: dimensions, images: images_per_frame)
 
-      images = frame_data.chars.each_slice(frame_bytes).map(&:join).map {|x|
-        Image.from_raw(x, width: width, height: height)
-      }
-
-      frames << Frame.new(uptime, images)
+      frames << frame
     end
     if data.length > 0
       raise "Unexpected trailing bytes: #{data.inspect}"
     end
 
-    new(frames)
+    new(frames, dimensions: dimensions)
   end
 
-  def initialize(frames)
+  def initialize(frames, dimensions:)
     @frames = frames
+    @dimensions = dimensions
   end
 end

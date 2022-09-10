@@ -1,4 +1,5 @@
 require 'bitwise'
+require 'dimension'
 require 'base64'
 require 'json'
 
@@ -24,15 +25,15 @@ class Image
     end
   end
 
-  def self.from_raw(data, width: 128, height: 32)
+  def self.from_raw(data, width: 128, height: 32, dimensions: nil)
+    dimensions ||= Dimension.wh(width, height)
     # For some reason each byte is flipped, possible something in bitwise
     # library, or maybe just a quirk of output format.
     new(
       Bitwise.new(data.chars.map {|y|
         y.unpack("B*").map(&:reverse).pack("B*")
       }.join),
-      width: width,
-      height: height
+      dimensions: dimensions
     )
   end
 
@@ -74,10 +75,9 @@ class Image
     Image.new(mask, width: width, height: height)
   end
 
-  def initialize(bits, width:, height:, mask: nil)
+  def initialize(bits, width:nil, height:nil, dimensions: nil, mask: nil)
     @bits = bits
-    @width = width
-    @height = height
+    @dimensions = dimensions || Dimension.wh(width, height)
 
     if mask
       @mask = mask
@@ -229,7 +229,14 @@ class Image
     Transposed.wrap(self)
   end
 
-  attr_reader :width, :height
+  def width
+    dimensions.w
+  end
+
+  def height
+    dimensions.h
+  end
+  attr_reader :dimensions
 
   protected
 

@@ -1,6 +1,7 @@
 require 'logger'
 require 'pin2dmd_dump'
 require 'dimension'
+require 'bytes'
 
 class Analyzer
   class Pin2DMD
@@ -28,12 +29,12 @@ class Analyzer
         unless name == "PIN2DMD"
           raise "Unsupported device: #{name}"
         end
-        plane_size = 128 * 32 / 8
+        plane_size = dimensions.w * dimensions.h / 8
 
         handle.claim_interface(0) do |handle|
           # Dunno whether we need to send the whole 64 bytes but that's what
           # the original code does...
-          output = ("\x01\xc3\xe8\x03" + "\x00" * 60).force_encoding(Encoding::ASCII_8BIT)
+          output = b("\x01\xc3\xe8\x03" + "\x00" * 60)
           f = -> {
             written_bytes = handle.bulk_transfer(endpoint: 0x01, dataOut: output)
             if written_bytes != output.length
@@ -76,7 +77,7 @@ class Analyzer
       while true
         data = handle.call
         break unless data
-        frame = Pin2DmdDump::Frame.from_bytes(data, dimensions: device.dimensions, images: 3)
+        frame = Frame.from_bytes(data, dimensions: device.dimensions, images: 3)
         puts frame.monochrome_image.formatted
         # logger.info(data)
         sleep 0.1
