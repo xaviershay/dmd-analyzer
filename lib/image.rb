@@ -62,8 +62,7 @@ class Image
     bits = Bitwise.new(Base64.decode64(raw.fetch("bits")))
 
     attrs = {
-      width: raw.fetch("width"),
-      height: raw.fetch("height")
+      dimensions: Dimension.wh(raw.fetch("width"), raw.fetch("height"))
     }
     if raw["mask"]
       attrs[:mask] = Bitwise.new(Base64.decode64(raw["mask"]))
@@ -72,10 +71,14 @@ class Image
   end
 
   def mask_image
-    Image.new(mask, width: width, height: height)
+    Image.new(mask, dimensions: dimensions)
   end
 
-  def initialize(bits, width:nil, height:nil, dimensions: nil, mask: nil)
+  def initialize(bits, dimensions: nil, mask: nil)
+    if dimensions.is_a?(Array)
+      dimensions = Dimension.wh(dimensions[0], dimensions[1])
+    end
+
     @bits = bits
     @dimensions = dimensions || Dimension.wh(width, height)
 
@@ -98,42 +101,6 @@ class Image
 
   def mask!(x, y, w, h)
     self.mask = mask_from_rect(x, y, w, h)
-  end
-
-  # [x, y] coordinates of all lit pixels
-  def coordinates
-    masked_bits.indexes.map {|x| [x % width, x / width] }
-  end
-
-  def fit_to_content
-    x_bounds = [width, -1]
-    y_bounds = [height, -1]
-
-    ones = masked_bits.indexes
-
-    ones.each do |one_index|
-      x = one_index % width
-      y = one_index / width
-
-      x_bounds[0] = x if x < x_bounds[0]
-      x_bounds[1] = x if x > x_bounds[1]
-      y_bounds[0] = y if y < y_bounds[0]
-      y_bounds[1] = y if y > y_bounds[1]
-    end
-
-    new_width = x_bounds[1] - x_bounds[0] + 1
-    new_height = y_bounds[1] - y_bounds[0] + 1
-
-    arr = bits.bits.chars.each_slice(width).to_a
-    arr = arr[y_bounds[0]..y_bounds[1]].map do |row|
-      row[x_bounds[0]..x_bounds[1]]
-    end
-
-    Image.new(
-      Bitwise.new([arr.join].pack("B*")),
-      width: new_width,
-      height: new_height
-    )
   end
 
   def fit_to_masked_content(x, y, w, h)
@@ -164,8 +131,7 @@ class Image
 
     Image.new(
       Bitwise.new([arr.join].pack("B*")),
-      width: new_width,
-      height: new_height
+      dimensions: Dimension.wh(new_width, new_height)
     )
   end
 
@@ -196,7 +162,7 @@ class Image
       raise "dimensions don't match"
     end
 
-    Image.new(self.bits | image.bits, height: height, width: width)
+    Image.new(self.bits | image.bits, dimensions: dimensions)
   end
 
   def formatted(style: :quadrant)

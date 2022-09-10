@@ -36,8 +36,7 @@ result = Benchmark.measure do
         digits = []
         success = true
         bounds.each do |bound|
-          image.mask!(bound[0], 0, bound[1] - bound[0], 23)
-          number = image.fit_to_content
+          number = image.fit_to_masked_content(bound[0], 0, bound[1] - bound[0], 23)
           next if separator == number
           t = templates.detect {|n, template|
             template == number
