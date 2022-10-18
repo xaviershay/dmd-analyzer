@@ -1,7 +1,10 @@
 require 'logger'
+require 'pry'
 require 'pin2dmd_dump'
 require 'dimension'
 require 'bytes'
+require 'libusb'
+require 'dimension'
 
 class Analyzer
   class Pin2DMD
@@ -12,7 +15,7 @@ class Analyzer
     end
 
     def dimensions
-      Dimensions.wh(128, 32) # Hard-coded for now
+      Dimension.wh(128, 32) # Hard-coded for now
     end
 
     def open
@@ -20,6 +23,7 @@ class Analyzer
       #   https://github.com/lucky01/PIN2DMD/issues/21#issuecomment-1200426120
       #
       # It's also checked into this repo for posterity in `misc`
+      usb = LIBUSB::Context.new
       device = usb.devices(idVendor: MY_VID, idProduct: MY_PID).first
       unless device
         raise "No connected PIN2DMD device"
@@ -68,6 +72,7 @@ class Analyzer
   end
 
   def run(device: WPCEmuDump.new("data/dm-1p-3ball.raw.gz"))
+    device = Pin2DMD.new
     logger = Logger.new(STDOUT)
     logger.formatter = ->(_, _,  _, msg) {
       time = Time.now.utc.to_f * 1000
@@ -79,8 +84,9 @@ class Analyzer
         break unless data
         frame = Frame.from_bytes(data, dimensions: device.dimensions, images: 3)
         puts frame.monochrome_image.formatted
+        # binding.pry
         # logger.info(data)
-        sleep 0.1
+        sleep 0.5
       end
     end
   end
