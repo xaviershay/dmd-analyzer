@@ -4,9 +4,6 @@ DMD Analyzer
 Analyze PIN2DMD dump files (such as can be generated from
 https://playfield.dev) and extract game information from them.
 
-Currently just an assorted selection of tools that don't do much, but it can
-extract single player scores from Demolition Man which is pretty neat.
-
 Motivation for the project is to one day analyze a live stream from a game to
 automatically capture statistics, in the spirit of
 https://github.com/ferocia/kartalytics.
@@ -15,6 +12,28 @@ A test dump file from Demolition Man is provided in `data` to experiment with.
 
 There is rails app in `dmd-analyzer` that can receive events and store in a
 database.
+
+Current Status
+--------------
+
+Proof of concept code for Demolition Man can analyze a variety of events and
+track scores for any number of players.
+
+Only works on an emulator dump though, I can't get a reliable feed of the real
+DMD to process :(
+
+In theory, PIN2DMD has a debug interface over microUSB that can deliver frames.
+In practice, while I can get _some_ frames out of it, I can't get it to stream
+reliably: it would give "broken" frames, and would persistently crash after a
+few seconds of operation. [Details in this
+issue.](https://github.com/lucky01/PIN2DMD/issues/21).
+
+Possible next steps:
+
+* Investigate the firmware of PIN2DMD? (Need to pay the authors for this.)
+* Find another way to tap the DMD?
+
+These are pretty far out of my comfort zone and I haven't pursued them yet.
 
 Usage
 -----
