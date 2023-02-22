@@ -32,6 +32,8 @@ Possible next steps:
 
 * Investigate the firmware of PIN2DMD? (Need to pay the authors for this.)
 * Find another way to tap the DMD?
+* Try using a different language to eliminate possibility of issue with Ruby's
+  libusb wrapper?
 
 These are pretty far out of my comfort zone and I haven't pursued them yet.
 
